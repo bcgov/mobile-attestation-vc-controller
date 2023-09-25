@@ -93,10 +93,12 @@ def verify_x5c_certificates(attestation_object):
 
         if intermediate_certificate_is_valid is None and credential_certificate_is_valid is None:
             print('The certificates are signed by the ROOT certificate.')
+            return True
 
     except InvalidSignature as e:
         print("The certificates are NOT signed by the ROOT certificate.")
         print(e)
+        return False
 
 
 def extract_attestation_object_extension(attestation_object, oid='1.2.840.113635.100.8.2'):
@@ -129,13 +131,28 @@ def create_hash_from_pub_key(cred_certificate):
     # Print the hash as a hexadecimal string
     return hash_hex
 
-def verify_attestation_statement(attestation_object):
+def verify_attestation_statement(attestation_object, nonce):
+    # decode the attestation object is expecting attestation_object
+    # to be JSON.
+
+    # print(f"object = {attestation_object}")
+    apple_attestation_object = decode_apple_attestation_object(attestation_object['attestation_object'])
+    if not apple_attestation_object:
+        return False
+
+    # 1. Verify that the x5c array contains the intermediate and leaf
+    # certificates for App Attest, starting from the credential certificate in the first
+    # data buffer in the array (credcert). Verify the validity of the certificates using
+    # Apple’s App Attest root certificate.
+
+    verify_x5c_status = verify_x5c_certificates(apple_attestation_object)
+    if not verify_x5c_status:
+        return False
+
     return True
 
 def main():
     load_dotenv()
-
-    server_side_nonce = '1234567890'
 
     with open("attestation.json", "r") as f:
         attestation_as_json = json.load(f)
