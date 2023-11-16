@@ -13,6 +13,9 @@ __pycache__
 
 # Ignore all .env files and secrets
 .env
+*key*
+*secret*
+*secrets*
 
 # Ignore merge artifacts
 *.orig
