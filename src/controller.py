@@ -13,6 +13,11 @@ nonce = secrets.token_hex(16)
 def handle_connection(connection_id):
     print("handle_connection")
 
+    # TODO(jl): This needs to be a global nonce so that iOS
+    # can verify the challenge response. Must be cached so it can
+    # be unique for each connection in the future.
+    global nonce
+
     connection = get_connection(connection_id)
     print(f"fetched connection = {connection}")
     if connection['rfc23_state'] != 'completed':
@@ -56,10 +61,12 @@ def handle_request_issuance_action(connection_id, content):
 def handle_challenge_response(connection_id, content):
     print("handle_attestation_challenge")
 
+    global nonce
+
     platform = content.get('platform')
 
     if platform == 'apple':
-        is_valid_challenge = verify_attestation_statement(content)
+        is_valid_challenge = verify_attestation_statement(content, nonce)
         if is_valid_challenge:
             print("valid apple challenge")
             offer_attestation_credential(connection_id)
