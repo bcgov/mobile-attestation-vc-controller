@@ -27,6 +27,8 @@ When run, this program will act as a "controller" to an ACA-py agent. It uses Fl
 
 ## Running
 
+### Local Development
+
 First, create a `.env` file in the root of your folder by copying env.sample to `.env`, populate the values with your own. For Android Attestation you will need a Google OAuth JSON key in `/src` configured for your app.
 
 ```bash
@@ -49,7 +51,7 @@ python controller.py
 The output should look something like this:
 
 ```bash
-vscode ➜ /work (main) $ python src/controller.py 
+vscode ➜ /work (main) $ python src/controller.py
  * Serving Flask app 'controller'
  * Debug mode: on
 WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
@@ -67,6 +69,30 @@ npx ngrok http 5000
 ```
 
 Finally, whatever public endpoint is provided from, in this case `ngrok` needs to be provided to Traction as the controller endpoint. This can be done by going to Settings -> Tenant Profile and entering the URL in the `WebHook URL` field.
+
+### OpenShift Cluster
+
+The general command to deploy this to an OpenShift cluster is:
+
+```bash
+helm template <RELEASE> ./devops/charts/controller
+--set-string wallet_id=<WALLET_ID> \
+--set-string wallet_key=<WALLET_KEY> \
+--set-file google_oauth_key.json=<PATH_TO_GOOGLE_OAUTH_KEY>| \
+oc apply -n <NAMESPACE> -f -
+```
+
+And example command to deploy to the `e79518-dev` namespace is:
+
+```bash
+helm template bcwallet ./devops/charts/controller
+--set-string wallet_id=123-456-789 \
+--set-string wallet_key=abc-def-ghi \
+--set-file google_oauth_key.json=./google_oauth_key.json| \
+oc apply -n e79518-dev -f -
+```
+
+The release name can be anything you want, but it must be unique to the namespace. When deploying to a shared namespace like `e79518-dev`, it is recommended use the a meaningful release name that will help reason about what the controller is doing.
 
 ## Notes Below Here
 
@@ -136,4 +162,4 @@ After successfully completing these steps, you can trust the attestation object.
 - [x] Verify the package info matches our app
 - [x] Verify the device integrity fields
 - [ ] Verify the app integrity fields (left commented out while in development)
-- [ ] Verify the nonce in the verdict payload matches the nonce the controller sent to the device 
+- [ ] Verify the nonce in the verdict payload matches the nonce the controller sent to the device
