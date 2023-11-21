@@ -1,0 +1,51 @@
+name: Test & Build
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "src/**"
+
+# defaults:
+#   run:
+#     working-directory: ./web
+env:
+  REGISTRY: ghcr.io
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    permissions:
+      packages: read
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+    #   - name: Run tests
+    #     run: |
+    #       pip install -r requirements.txt
+    #       pytest
+
+  build:
+    # if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    needs: [quality]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Docker image
+        uses: ./.github/actions/docker-build
+        with:
+          registry: ${{ env.REGISTRY }}
+          image_name: "${{ github.repository }}/controller"
+          context: ./
+          dockerfile: "Dockerfile"
+          docker_user: ${{ github.actor }}
+          docker_password: ${{ secrets.GITHUB_TOKEN }}
