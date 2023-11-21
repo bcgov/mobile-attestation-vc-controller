@@ -1,8 +1,6 @@
 ARG python_version=3.9.18
 FROM python:${python_version}-slim-bullseye AS build
 
-WORKDIR /src
-
 COPY requirements.txt /tmp/requirements.txt
 
 RUN apt-get update && \
