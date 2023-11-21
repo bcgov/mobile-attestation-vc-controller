@@ -6,7 +6,7 @@ from traction import get_connection, send_message, offer_attestation_credential
 from apple import verify_attestation_statement
 from goog import verify_integrity_token
 
-app = Flask(__name__)
+server = Flask(__name__)
 
 nonce = secrets.token_hex(16)
 
@@ -104,7 +104,7 @@ def decode_base64_to_json(s):
 
     return json_obj
 
-@app.route('/topic/basicmessages/', methods=['POST'])
+@server.route('/topic/basicmessages/', methods=['POST'])
 def basicmessages():
     print("Run POST /topic/basicmessages/")
     message = request.get_json()
@@ -117,7 +117,7 @@ def basicmessages():
 
     return make_response('', 204)
 
-@app.route('/topic/connections/', methods=['POST'])
+@server.route('/topic/connections/', methods=['POST'])
 def connections():
     print("Run POST /topic/connections/")
 
@@ -131,4 +131,4 @@ def connections():
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    server.run(debug=True)
