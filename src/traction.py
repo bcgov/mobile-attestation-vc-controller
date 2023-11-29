@@ -97,7 +97,8 @@ def offer_attestation_credential(conn_id):
         "Authorization": f"Bearer {token}"
     }
 
-    with open('../fixtures/offer.json', 'r') as f:
+    offer_path = os.getenv("OFFER_JSON_PATH")
+    with open(offer_path, 'r') as f:
         offer = json.load(f)
 
     offer['connection_id'] = conn_id

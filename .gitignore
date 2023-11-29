@@ -9,6 +9,7 @@ logs.txt
 attestation.json
 expo-attestation
 oauth.json
+google_oauth_key.json
 __pycache__
 
 # Ignore all .env files and secrets

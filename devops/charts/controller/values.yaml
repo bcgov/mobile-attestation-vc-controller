@@ -20,6 +20,8 @@ env:
   TRACTION_BASE_URL: "https://traction-tenant-proxy-dev.apps.silver.devops.gov.bc.ca"
   APPLE_ATTESTATION_ROOT_CA_URL: "https://www.apple.com/certificateauthority/Apple_App_Attestation_Root_CA.pem"
   GOOGLE_AUTH_JSON_PATH: "/opt/controller/google_oauth_key.json"
+  REQUEST_ATTESTATION_JSON_PATH: "opt/fixtures/request_attestation.json"
+  OFFER_JSON_PATH: "opt/fixtures/offer.json"
 
 resources:
   requests:
