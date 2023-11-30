@@ -153,6 +153,7 @@ def verify_attestation_statement(attestation_object, nonce):
 
 def main():
     load_dotenv()
+    server_side_nonce = '1234567890'
 
     with open("attestation.json", "r") as f:
         attestation_as_json = json.load(f)
@@ -206,15 +207,38 @@ def main():
 
     print('pub key match =', hash == hash_hex)
 
-
-if __name__ == "__main__":
-    main()
-
     # 6. Compute the SHA256 hash of your app’s App ID, and verify that it’s the same as the
     # authenticator data’s RP ID hash.
-    # 7. Verify that the authenticator data’s counter field equals 0.
+    app_id = 'L796QSLV3E.ca.bc.gov.BCWallet'
+    app_id_bytes = app_id.encode('utf-8')
+    app_id_hash = hashlib.sha256(app_id_bytes).hexdigest()
+    auth_app_id_hash = apple_attestation_object['authData'][:32].hex()
+    print(auth_app_id_hash == app_id_hash)
+
+    # 7. Verify that the authenticator data’s counter field equals 0. See 
+    # https://www.w3.org/TR/webauthn/#sctn-attestation for byte start and end points.
+    counter_start = 33
+    counter_end = 37
+    counter = apple_attestation_object['authData'][counter_start:counter_end]
+    print(counter == bytearray(b'\x00\x00\x00\x00'))
+
     # 8. Verify that the authenticator data’s aaguid field is either appattestdevelop if
     # operating in the development environment, or appattest followed by seven 0x00
     # bytes if operating in the production environment.
+    aaguid_start = 37
+    aaguid_end = 53
+    aaguid = apple_attestation_object['authData'][aaguid_start:aaguid_end]
+    print(aaguid == bytearray(b'appattestdevelop') or aaguid == bytearray(b'appattest\x00\x00\x00\x00\x00\x00\x00'))
+
     # 9. Verify that the authenticator data’s credentialId field is the same as the
     # key identifier.
+    key_identifier = bytes_value
+    cred_id_length = len(key_identifier)
+    cred_id_start = 55
+    cred_id_end = cred_id_start + cred_id_length
+    credential_id = apple_attestation_object['authData'][cred_id_start:cred_id_end]
+    print(credential_id == key_identifier)
+
+
+if __name__ == "__main__":
+    main()
