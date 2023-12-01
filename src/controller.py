@@ -28,8 +28,8 @@ def handle_connection(connection_id):
         print("connection is not completed")
         return
 
-    request_attestation_path = os.getenv("REQUEST_ATTESTATION_JSON_PATH")
-    with open(request_attestation_path, 'r') as f:
+    message_templates_path = os.getenv("MESSAGE_TEMPLATES_PATH")
+    with open(message_templates_path + 'request_attestation.json', 'r') as f:
         request_attestation = json.load(f)
 
     request_attestation['nonce'] = nonce  # secrets.token_hex(16)
