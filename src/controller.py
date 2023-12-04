@@ -29,7 +29,7 @@ def handle_connection(connection_id):
         return
 
     message_templates_path = os.getenv("MESSAGE_TEMPLATES_PATH")
-    with open(message_templates_path + 'request_attestation.json', 'r') as f:
+    with open(os.path.join(message_templates_path, 'request_attestation.json'), 'r') as f:
         request_attestation = json.load(f)
 
     request_attestation['nonce'] = nonce  # secrets.token_hex(16)
