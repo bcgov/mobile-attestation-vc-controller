@@ -16,7 +16,7 @@ import requests
 import os
 import json
 from dotenv import load_dotenv
-from constants import rp_id_hash_end, counter_start, counter_end, aaguid_start, aaguid_end, cred_id_start
+from constants import app_id, rp_id_hash_end, counter_start, counter_end, aaguid_start, aaguid_end, cred_id_start
 
 from cryptography.exceptions import InvalidSignature
 
@@ -135,7 +135,6 @@ def create_hash_from_pub_key(cred_certificate):
     return hash_hex
 
 def create_app_id_hash():
-    app_id = 'L796QSLV3E.ca.bc.gov.BCWallet'
     app_id_bytes = app_id.encode('utf-8')
     app_id_hash = hashlib.sha256(app_id_bytes).hexdigest()
     return app_id_hash

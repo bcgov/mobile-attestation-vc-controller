@@ -1,3 +1,4 @@
+app_id = 'L796QSLV3E.ca.bc.gov.BCWallet'
 rp_id_hash_end = 32
 counter_start = 33
 counter_end = 37
