@@ -65,3 +65,5 @@ spec:
               value: {{.Values.env.APPLE_ATTESTATION_ROOT_CA_URL | quote}}
             - name: GOOGLE_AUTH_JSON_PATH
               value:  {{.Values.env.GOOGLE_AUTH_JSON_PATH | quote}}  
+            - name: MESSAGE_TEMPLATES_PATH
+              value:  {{.Values.env.MESSAGE_TEMPLATES_PATH | quote}}

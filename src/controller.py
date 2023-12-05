@@ -5,6 +5,10 @@ from flask import Flask, request, make_response
 from traction import get_connection, send_message, offer_attestation_credential
 from apple import verify_attestation_statement
 from goog import verify_integrity_token
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 server = Flask(__name__)
 
@@ -24,10 +28,11 @@ def handle_connection(connection_id):
         print("connection is not completed")
         return
 
-    with open('../fixtures/request_attestation.json', 'r') as f:
+    message_templates_path = os.getenv("MESSAGE_TEMPLATES_PATH")
+    with open(os.path.join(message_templates_path, 'request_attestation.json'), 'r') as f:
         request_attestation = json.load(f)
 
-    request_attestation['nonce'] = nonce # secrets.token_hex(16)
+    request_attestation['nonce'] = nonce  # secrets.token_hex(16)
     json_str = json.dumps(request_attestation)
     base64_str = base64.b64encode(json_str.encode('utf-8')).decode('utf-8')
 

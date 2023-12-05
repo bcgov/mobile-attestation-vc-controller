@@ -37,6 +37,7 @@ TRACTION_BASE_URL="https://traction-tenant-proxy-dev.apps.silver.devops.gov.bc.c
 TRACTION_WALLET_ID="b1d5b628-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
 TRACTION_WALLET_KEY="286e7818-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
 GOOGLE_AUTH_JSON_PATH="path_to_google_oauth_json_key_from_src.json"
+MESSAGE_TEMPLATES_PATH="fixtures/"
 ```
 
 You will also need to create a schema and credential definition id in your Traction instance and then add it to `fixtures/offer.json`, following the format.
@@ -44,8 +45,7 @@ You will also need to create a schema and credential definition id in your Tract
 For simplicity, this repo comes with a `.devContainer` to allow developers to get up-and-running quickly. Use VSCode to restart or start the container. Once the container is running, you can start the controller with the following command:
 
 ```bash
-cd src
-python controller.py
+python src/controller.py
 ```
 
 The output should look something like this:
