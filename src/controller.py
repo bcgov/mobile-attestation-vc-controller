@@ -7,20 +7,14 @@ from apple import verify_attestation_statement
 from goog import verify_integrity_token
 import os
 from dotenv import load_dotenv
+from redis_config import redis_instance
 
 load_dotenv()
 
 server = Flask(__name__)
 
-nonce = secrets.token_hex(16)
-
 def handle_connection(connection_id):
     print("handle_connection")
-
-    # TODO(jl): This needs to be a global nonce so that iOS
-    # can verify the challenge response. Must be cached so it can
-    # be unique for each connection in the future.
-    global nonce
 
     connection = get_connection(connection_id)
     print(f"fetched connection = {connection}")
@@ -32,7 +26,11 @@ def handle_connection(connection_id):
     with open(os.path.join(message_templates_path, 'request_attestation.json'), 'r') as f:
         request_attestation = json.load(f)
 
-    request_attestation['nonce'] = nonce  # secrets.token_hex(16)
+    nonce = secrets.token_hex(16)
+    # cache nonce with connection id as key
+    redis_instance.set(connection_id, nonce)
+
+    request_attestation['nonce'] = nonce
     json_str = json.dumps(request_attestation)
     base64_str = base64.b64encode(json_str.encode('utf-8')).decode('utf-8')
 
@@ -66,9 +64,10 @@ def handle_request_issuance_action(connection_id, content):
 def handle_challenge_response(connection_id, content):
     print("handle_attestation_challenge")
 
-    global nonce
-
     platform = content.get('platform')
+
+    # fetch nonce from cache using connection id as key
+    nonce = redis_instance.get(connection_id)
 
     if platform == 'apple':
         is_valid_challenge = verify_attestation_statement(content, nonce)
@@ -79,7 +78,7 @@ def handle_challenge_response(connection_id, content):
             print("invalid apple challenge")
     elif platform == 'google':
         token = content.get('attestation_object')
-        is_valid_challenge = verify_integrity_token(token)
+        is_valid_challenge = verify_integrity_token(token, nonce)
         if is_valid_challenge:
             print("valid google integrity verdict")
             offer_attestation_credential(connection_id)

@@ -10,15 +10,16 @@ creds = service_account.Credentials.from_service_account_file(
 )
 
 # should eventually confirm nonce matches here
-def isValidVerdict(verdict):
+def isValidVerdict(verdict, nonce):
     try:
         valid_device_verdicts = ['MEETS_DEVICE_INTEGRITY']
-        # nonce = verdict['tokenPayloadExternal']['requestDetails']['nonce']
+        verdict_nonce = verdict['tokenPayloadExternal']['requestDetails']['nonce']
         request_package_name = verdict['tokenPayloadExternal']['requestDetails']['requestPackageName']
         package_name = verdict['tokenPayloadExternal']['appIntegrity']['packageName']
         # app_verdict = verdict['tokenPayloadExternal']['appIntegrity']['appRecognitionVerdict']
         device_verdicts = verdict['tokenPayloadExternal']['deviceIntegrity']['deviceRecognitionVerdict']
         if (
+                verdict_nonce == nonce and
                 request_package_name == 'ca.bc.gov.BCWallet' and
                 package_name == 'ca.bc.gov.BCWallet' and
                 # app_verdict == 'PLAY_RECOGNIZED' and
@@ -33,7 +34,7 @@ def isValidVerdict(verdict):
 
 
 # decrypt the integrity token on google's servers
-def verify_integrity_token(token):
+def verify_integrity_token(token, nonce):
     try:
         service = build('playintegrity', 'v1', credentials=creds)
         body = {
@@ -41,7 +42,7 @@ def verify_integrity_token(token):
         }
         instance = service.v1()
         verdict = instance.decodeIntegrityToken(packageName='ca.bc.gov.BCWallet', body=body).execute()
-        if (isValidVerdict(verdict)):
+        if (isValidVerdict(verdict, nonce)):
             return True
         else:
             return False
@@ -51,7 +52,7 @@ def verify_integrity_token(token):
 
 
 def main():
-    print('test google decryption and validation here')
+    pass
 
 
 if __name__ == "__main__":

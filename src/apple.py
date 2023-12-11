@@ -233,13 +233,7 @@ def verify_attestation_statement(attestation_object, nonce):
         return False
 
 def main():
-    # placeholder until caching is implemented
-    server_side_nonce = '1234567890'
-
-    with open("attestation.json", "r") as f:
-        attestation_as_json = json.load(f)
-
-    verify_attestation_statement(attestation_as_json, server_side_nonce)
+    pass
 
 
 if __name__ == "__main__":

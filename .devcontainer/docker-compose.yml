@@ -1,0 +1,14 @@
+version: '3.9'
+
+networks:
+  local_network:
+    name: local_network
+
+services:
+  redis:
+    build: ./redis
+    ports:
+      - '6379:6379'
+    tty: true
+    networks:
+      - local_network
