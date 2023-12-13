@@ -68,6 +68,9 @@ def handle_challenge_response(connection_id, content):
 
     # fetch nonce from cache using connection id as key
     nonce = redis_instance.get(connection_id)
+    if not nonce:
+        print('No cached nonce')
+        return
 
     if platform == 'apple':
         is_valid_challenge = verify_attestation_statement(content, nonce)

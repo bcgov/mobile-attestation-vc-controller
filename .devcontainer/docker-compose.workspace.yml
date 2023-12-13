@@ -6,7 +6,7 @@ networks:
 
 services:
   workspace:
-    build: ./server
+    image: python:3-alpine3.19
     working_dir: /work
     volumes:
       - ../:/work
