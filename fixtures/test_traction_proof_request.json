@@ -7,6 +7,10 @@
       "names": ["Assurance Level", "Issued At"],
       "restrictions": [
         {
+          "schema_id": "J6LCm5Edi9Mi3ASZCqNC1A:2:dev-attestation-schema:1.0",
+          "issuer_did": "J6LCm5Edi9Mi3ASZCqNC1A"
+        },
+        {
           "cred_def_id": "J6LCm5Edi9Mi3ASZCqNC1A:3:CL:109799:dev-attestation"
         },
         {
