@@ -13,9 +13,17 @@ load_dotenv()
 
 server = Flask(__name__)
 
-def handle_connection(connection_id):
-    print("handle_connection")
+def handle_message(message, content):
+    action = content.get('action')
+    handler = {
+        'request_nonce': handle_request_nonce,
+        'challenge_response': handle_challenge_response,
+    }.get(action, handle_default)
 
+    return handler(message['connection_id'], content)
+
+def handle_request_nonce(connection_id, content):
+    print("handle_request_nonce")
     connection = get_connection(connection_id)
     print(f"fetched connection = {connection}")
     if connection['rfc23_state'] != 'completed':
@@ -37,29 +45,6 @@ def handle_connection(connection_id):
     print(f"sending request attestation message to {connection_id}")
 
     send_message(connection_id, base64_str)
-
-
-def handle_message(message, content):
-    action = content.get('action')
-    handler = {
-        'request_issuance': handle_request_issuance_action,
-        'challenge_response': handle_challenge_response,
-    }.get(action, handle_default)
-
-    return handler(message['connection_id'], content)
-
-def handle_request_issuance_action(connection_id, content):
-    print("handle_request_issuance_action")
-
-    return
-    # with open('fixtures/request_attestation.json', 'r') as f:
-    #     request_attestation = json.load(f)
-
-    # request_attestation['nonce'] = secrets.token_hex(16)
-    # json_str = json.dumps(request_attestation)
-    # base64_str = base64.b64encode(json_str.encode('utf-8')).decode('utf-8')
-
-    # send_message(connection_id, base64_str)
 
 def handle_challenge_response(connection_id, content):
     print("handle_attestation_challenge")
@@ -121,18 +106,6 @@ def basicmessages():
         decoded_content = decode_base64_to_json(content)
         if decoded_content['type'] == 'attestation':
             handle_message(message, decoded_content)
-
-    return make_response('', 204)
-
-@server.route('/topic/connections/', methods=['POST'])
-def connections():
-    print("Run POST /topic/connections/")
-
-    connection = request.get_json()
-    print(f"Recieved conneciton = {connection}")
-    connectionId = connection['connection_id']
-
-    handle_connection(connectionId)
 
     return make_response('', 204)
 

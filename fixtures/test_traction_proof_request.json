@@ -1,0 +1,19 @@
+{
+  "nonce": "1234567890",
+  "name": "Attestation Proof",
+  "version": "1.0",
+  "requested_attributes": {
+    "attestationInfo": {
+      "names": ["Assurance Level", "Issued At"],
+      "restrictions": [
+        {
+          "cred_def_id": "J6LCm5Edi9Mi3ASZCqNC1A:3:CL:109799:dev-attestation"
+        },
+        {
+          "cred_def_id": "NxWbeuw8Y2ZBiTrGpcK7Tn:3:CL:48312:default"
+        }
+      ]
+    }
+  },
+  "requested_predicates": {}
+}
