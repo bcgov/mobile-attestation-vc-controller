@@ -96,6 +96,11 @@ def decode_base64_to_json(s):
 
     return json_obj
 
+@server.route('/topic/ping/', methods=['POST'])
+def ping():
+    print("Run POST /ping/")
+    return make_response('', 204)
+
 @server.route('/topic/basicmessages/', methods=['POST'])
 def basicmessages():
     print("Run POST /topic/basicmessages/")

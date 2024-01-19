@@ -1,4 +1,4 @@
-version: '3.9'
+version: "3.9"
 
 networks:
   local_network:
@@ -8,7 +8,18 @@ services:
   redis:
     image: redis:7.2.3-alpine
     ports:
-      - '6379:6379'
+      - "6379:6379"
+    tty: true
+    networks:
+      - local_network
+
+  workspace:
+    image: python:3.8.18-bullseye
+    working_dir: /work
+    volumes:
+      - ../:/work
+    ports:
+      - "8443:8443"
     tty: true
     networks:
       - local_network

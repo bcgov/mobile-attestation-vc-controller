@@ -2,6 +2,7 @@ from cryptography import x509
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa, ec, padding
 from cryptography.hazmat.primitives.hashes import SHA256
+from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 from cryptography.hazmat.backends import default_backend
 from cryptography.x509.oid import NameOID
@@ -118,21 +119,44 @@ def extract_attestation_object_extension(attestation_object, oid='1.2.840.113635
     return decoded_data[0].asOctets().hex()
 
 
+def is_valid_pem(pem):
+    try:
+        serialization.load_pem_public_key(
+            pem,
+            backend=default_backend()
+        )
+        return True
+    except ValueError:
+        return False
+    
 def create_hash_from_pub_key(cred_certificate):
-    certificate = x509.load_der_x509_certificate(cred_certificate)
+    certificate = x509.load_der_x509_certificate(cred_certificate, default_backend())
 
-    # Get the public key from the certificate
+    # Apple expect the public key to be in the X9.62 uncompressed
+    # point format.
     public_key = certificate.public_key()
 
-    # Serialize the public key to bytes
-    public_key_bytes = public_key.public_bytes(Encoding.DER, PublicFormat.SubjectPublicKeyInfo)
+    # Check if the public key is an Elliptic Curve key
+    if not isinstance(public_key.curve, ec.EllipticCurve):
+        # raise ValueError('AppleInvalidPublicKey')
+        return None
 
-    # Compute the SHA-256 hash of the public key bytes
-    hash_object = hashlib.sha256(public_key_bytes)
-    hash_hex = hash_object.hexdigest()
+    # Retrieve the X and Y coordinates of the public key
+    x = public_key.public_numbers().x
+    y = public_key.public_numbers().y
+ 
+    # Convert the coordinates to byte strings and prepend with b'\x04'
+    public_key_bytes = b'\x04' + x.to_bytes(32, byteorder='big') + y.to_bytes(32, byteorder='big')
 
-    # Print the hash as a hexadecimal string
-    return hash_hex
+    # Create a SHA256 hash of the public key bytes
+    digest = hashes.Hash(hashes.SHA256())
+    digest.update(public_key_bytes)
+    public_key_sha256 = digest.finalize()
+
+    # Convert the SHA256 hash to a hexadecimal representation
+    public_key_sha256_hex = public_key_sha256.hex()
+
+    return public_key_sha256_hex
 
 def create_app_id_hash():
     app_id_bytes = app_id.encode('utf-8')
@@ -178,15 +202,10 @@ def verify_attestation_statement(attestation_object, nonce):
         # 5. Create the SHA256 hash of the public key in credCert, and verify that it matches the
         # key identifier from your app.
         print('Apple Attestation step 5...')
-        public_hash = create_hash_from_pub_key(apple_attestation_object['attStmt']['x5c'][0])
-        bytes_value = base64.b64decode(attestation_object['key_id'])
-        hash_object = hashlib.sha256(bytes_value)
-        hash = hash_object.hexdigest()
-        if (hash != public_hash):
-            # this step is failing without caching nonce so commenting out for now
-            # return False
-            print('hash:', hash)
-            print('public_hash:', public_hash)
+        pub_key_hash = create_hash_from_pub_key(apple_attestation_object['attStmt']['x5c'][0])
+        key_id_b64 = base64.b64decode(attestation_object['key_id'])
+        if (key_id_b64.hex() != pub_key_hash): 
+            return False
 
         # 6. Compute the SHA256 hash of your app’s App ID, and verify that it’s the same as the
         # authenticator data’s RP ID hash.
@@ -215,7 +234,7 @@ def verify_attestation_statement(attestation_object, nonce):
         # 9. Verify that the authenticator data’s credentialId field is the same as the
         # key identifier.
         print('Apple Attestation step 9...')
-        key_identifier = bytes_value
+        key_identifier = base64.b64decode(attestation_object['key_id'])
         cred_id_length = len(key_identifier)
         cred_id_end = cred_id_start + cred_id_length
         credential_id = apple_attestation_object['authData'][cred_id_start:cred_id_end]

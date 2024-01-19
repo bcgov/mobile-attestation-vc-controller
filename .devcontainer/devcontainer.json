@@ -2,8 +2,7 @@
   "$schema": "https://aka.ms/vscode-remote/devcontainer-schema",
   "name": "Python3 and Redis",
   "dockerComposeFile": [
-    "docker-compose.yml",
-    "docker-compose.workspace.yml"
+    "docker-compose.yml"
   ],
   "service": "workspace",
   // "forwardPorts": [
@@ -24,10 +23,10 @@
     "vscode": {
       "extensions": [
         "ms-python.python",
-        "github.copilot",
-        "github.copilot-chat",
         "ms-python.flake8",
-        "ms-python.black-formatter"
+        "ms-python.black-formatter",
+        "github.copilot",
+        "github.copilot-chat"
       ],
       "settings": {
         "github.copilot.chat.enabled": true,
