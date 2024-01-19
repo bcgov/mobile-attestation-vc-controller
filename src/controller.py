@@ -8,6 +8,7 @@ from goog import verify_integrity_token
 import os
 from dotenv import load_dotenv
 from redis_config import redis_instance
+from constants import auto_expire_nonce
 
 load_dotenv()
 
@@ -35,8 +36,9 @@ def handle_request_nonce(connection_id, content):
         request_attestation = json.load(f)
 
     nonce = secrets.token_hex(16)
-    # cache nonce with connection id as key
-    redis_instance.set(connection_id, nonce)
+    # cache nonce with connection id as key, allow it to expire
+    # after n seconds
+    redis_instance.setex(connection_id, auto_expire_nonce, nonce)
 
     request_attestation['nonce'] = nonce
     json_str = json.dumps(request_attestation)
