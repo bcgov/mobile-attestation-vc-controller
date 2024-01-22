@@ -9,4 +9,4 @@ aaguid_end = 53
 cred_id_start = 55
 
 ## Redis
-auto_expire_nonce = 60 * 60 * 10 # 10 minutes
+auto_expire_nonce = 60 * 10 # 10 minutes
