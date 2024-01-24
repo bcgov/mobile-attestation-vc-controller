@@ -23,6 +23,18 @@ def handle_message(message, content):
 
     return handler(message['connection_id'], content)
 
+def report_failure(connection_id):
+    message_templates_path = os.getenv("MESSAGE_TEMPLATES_PATH")
+    with open(os.path.join(message_templates_path, 'report_failure.json'), 'r') as f:
+        report_failure = json.load(f)
+
+    json_str = json.dumps(report_failure)
+    base64_str = base64.b64encode(json_str.encode('utf-8')).decode('utf-8')
+
+    print(f"sending report failure message to {connection_id}")
+
+    send_message(connection_id, base64_str)
+
 def handle_request_nonce(connection_id, content):
     print("handle_request_nonce")
     connection = get_connection(connection_id)
@@ -57,6 +69,7 @@ def handle_challenge_response(connection_id, content):
     nonce = redis_instance.get(connection_id)
     if not nonce:
         print('No cached nonce')
+        report_failure(connection_id)
         return
 
     if platform == 'apple':
@@ -66,6 +79,7 @@ def handle_challenge_response(connection_id, content):
             offer_attestation_credential(connection_id)
         else:
             print("invalid apple challenge")
+            report_failure(connection_id)
     elif platform == 'google':
         token = content.get('attestation_object')
         is_valid_challenge = verify_integrity_token(token, nonce)
@@ -74,8 +88,10 @@ def handle_challenge_response(connection_id, content):
             offer_attestation_credential(connection_id)
         else:
             print("invalid google integrity verdict")
+            report_failure(connection_id)
     else:
         print("unsupported platform")
+        report_failure(connection_id)
 
 
 def handle_default(connection_id, content):

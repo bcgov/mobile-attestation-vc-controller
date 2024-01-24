@@ -1,0 +1,5 @@
+{
+  "type": "attestation",
+  "version": 1,
+  "action": "report_failure"
+}
