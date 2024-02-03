@@ -5,19 +5,21 @@
   "requested_attributes": {
     "attestationInfo": {
       "names": [
-        "Assurance Level",
-        "Issued At"
+        "operating_system_version",
+        "validation_method",
+        "app_id",
+        "app_vendor",
+        "issue_date_dateint",
+        "operating_system",
+        "app_version"
       ],
       "restrictions": [
         {
-          "schema_id": "J6LCm5Edi9Mi3ASZCqNC1A:2:dev-attestation-schema:1.0",
-          "issuer_did": "J6LCm5Edi9Mi3ASZCqNC1A"
+          "schema_id": "NXp6XcGeCR2MviWuY51Dva:2:app_attestation:1.0",
+          "issuer_did": "NXp6XcGeCR2MviWuY51Dva"
         },
         {
-          "cred_def_id": "J6LCm5Edi9Mi3ASZCqNC1A:3:CL:109799:dev-attestation"
-        },
-        {
-          "cred_def_id": "NxWbeuw8Y2ZBiTrGpcK7Tn:3:CL:48312:default"
+          "cred_def_id": "NXp6XcGeCR2MviWuY51Dva:3:CL:33557:bcwallet"
         }
       ]
     }
