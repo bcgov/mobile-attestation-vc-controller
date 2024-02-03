@@ -2,17 +2,37 @@
     "auto_issue": true,
     "auto_remove": true,
     "trace": true,
-    "cred_def_id": "NxWbeuw8Y2ZBiTrGpcK7Tn:3:CL:48312:default",
+    "cred_def_id": "NXp6XcGeCR2MviWuY51Dva:3:CL:33557:bcwallet",
     "credential_preview": {
         "@type": "issue-credential/1.0/credential-preview",
         "attributes": [
             {
-                "name": "Assurance Level",
-                "value": "3"
+                "name": "operating_system_version",
+                "value": "9000"
             },
             {
-                "name": "Issued At",
-                "value": "2023-05-14T14:48:00.000Z"
+                "name": "validation_method",
+                "value": "Quantum"
+            },
+            {
+                "name": "app_id",
+                "value": "ca.bc.gov.BCWallet"
+            },
+            {
+                "name": "app_vendor",
+                "value": "Govornment of British Columbia"
+            },
+            {
+                "name": "issue_date_dateint",
+                "value": "2024-02-03T03:09:07.667236"
+            },
+            {
+                "name": "operating_system",
+                "value": "HAL"
+            },
+            {
+                "name": "app_version",
+                "value": "1.0.0"
             }
         ]
     },
