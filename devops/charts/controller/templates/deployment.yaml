@@ -58,8 +58,6 @@ spec:
           envFrom:
             - secretRef:
                 name: {{ include "attestation-controller.fullname" . }}-traction-creds
-            - secretRef:
-                name: {{ include "attestation-controller.fullname" . }}-redis-creds
           env:
             - name: PORT
               value: {{.Values.service.targetPort | quote}}
@@ -71,3 +69,8 @@ spec:
               value:  {{.Values.env.GOOGLE_AUTH_JSON_PATH | quote}}  
             - name: MESSAGE_TEMPLATES_PATH
               value:  {{.Values.env.MESSAGE_TEMPLATES_PATH | quote}}
+            - name: REDIS_URI
+              valueFrom:
+                secretKeyRef:
+                  name: redis-shared
+                  key: connection-string

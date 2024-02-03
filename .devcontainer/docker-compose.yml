@@ -24,4 +24,4 @@ services:
     networks:
       - local_network
     environment:
-      - REDIS_URL=redis://redis:6379/0
+      - REDIS_URI=redis://redis:6379/0

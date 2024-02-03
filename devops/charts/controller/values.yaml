@@ -14,7 +14,7 @@ image:
   registry: ghcr.io
   repository: bcgov/mobile-attestation-vc-controller/controller
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "fdbeea6"
+  tag: "90bffd6"
 
 env:
   TRACTION_BASE_URL: "https://traction-tenant-proxy-dev.apps.silver.devops.gov.bc.ca"
