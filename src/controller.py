@@ -1,6 +1,7 @@
 import base64
 import json
 import secrets
+import logging
 from flask import Flask, request, make_response
 from traction import get_connection, send_message, offer_attestation_credential
 from apple import verify_attestation_statement
@@ -14,6 +15,9 @@ if os.getenv("FLASK_ENV") == "development":
     load_dotenv()
 
 server = Flask(__name__)
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 
 def handle_message(message, content):
     action = content.get("action")
@@ -33,17 +37,17 @@ def report_failure(connection_id):
     json_str = json.dumps(report_failure)
     base64_str = base64.b64encode(json_str.encode("utf-8")).decode("utf-8")
 
-    print(f"sending report failure message to {connection_id}")
+    logger.info(f"sending report failure message to {connection_id}")
 
     send_message(connection_id, base64_str)
 
 
 def handle_request_nonce(connection_id, content):
-    print("handle_request_nonce")
+    logger.info("handle_request_nonce")
     connection = get_connection(connection_id)
-    print(f"fetched connection = {connection}")
+    logger.info(f"fetched connection = {connection}")
     if connection["rfc23_state"] != "completed":
-        print("connection is not completed")
+        logger.info("connection is not completed")
         return
 
     message_templates_path = os.getenv("MESSAGE_TEMPLATES_PATH")
@@ -61,42 +65,42 @@ def handle_request_nonce(connection_id, content):
     json_str = json.dumps(request_attestation)
     base64_str = base64.b64encode(json_str.encode("utf-8")).decode("utf-8")
 
-    print(f"sending request attestation message to {connection_id}")
+    logger.info(f"sending request attestation message to {connection_id}")
 
     send_message(connection_id, base64_str)
 
 
 def handle_challenge_response(connection_id, content):
-    print("handle_attestation_challenge")
+    logger.info("handle_attestation_challenge")
 
     platform = content.get("platform")
 
     # fetch nonce from cache using connection id as key
     nonce = redis_instance.get(connection_id)
     if not nonce:
-        print("No cached nonce")
+        logger.info("No cached nonce")
         report_failure(connection_id)
         return
 
     if platform == "apple":
         is_valid_challenge = verify_attestation_statement(content, nonce)
         if is_valid_challenge:
-            print("valid apple challenge")
+            logger.info("valid apple challenge")
             offer_attestation_credential(connection_id)
         else:
-            print("invalid apple challenge")
+            logger.info("invalid apple challenge")
             report_failure(connection_id)
     elif platform == "google":
         token = content.get("attestation_object")
         is_valid_challenge = verify_integrity_token(token, nonce)
         if is_valid_challenge:
-            print("valid google integrity verdict")
+            logger.info("valid google integrity verdict")
             offer_attestation_credential(connection_id)
         else:
-            print("invalid google integrity verdict")
+            logger.info("invalid google integrity verdict")
             report_failure(connection_id)
     else:
-        print("unsupported platform")
+        logger.info("unsupported platform")
         report_failure(connection_id)
 
 
@@ -125,13 +129,13 @@ def decode_base64_to_json(s):
 
 @server.route("/topic/ping/", methods=["POST"])
 def ping():
-    print("Run POST /ping/")
+    logger.info("Run POST /ping/")
     return make_response("", 204)
 
 
 @server.route("/topic/basicmessages/", methods=["POST"])
 def basicmessages():
-    print("Run POST /topic/basicmessages/")
+    logger.info("Run POST /topic/basicmessages/")
     message = request.get_json()
     content = message["content"]
 

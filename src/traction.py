@@ -3,11 +3,14 @@ import json
 import os
 from urllib.parse import urljoin
 from dotenv import load_dotenv
+import logging
 
 if os.getenv("FLASK_ENV") == "development":
     load_dotenv()
 
 bearer_token = None
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 def fetch_bearer_token():
@@ -24,17 +27,17 @@ def fetch_bearer_token():
     headers = {"Content-Type": "application/json", "accept": "application/json"}
     data = {"wallet_key": wallet_key}
 
-    print(f"Requesting bearer token for walletId {wallet_id}")
+    logger.info(f"Requesting bearer token for walletId {wallet_id}")
 
     response = requests.post(url, headers=headers, data=json.dumps(data))
     if response.status_code == 200:
-        print("Token fetched successfully")
+        logger.info("Token fetched successfully")
         response_data = json.loads(response.text)
 
         bearer_token = response_data["token"]
         return bearer_token
     else:
-        print(f"Error fetcing token: {response.status_code}")
+        logger.info(f"Error fetcing token: {response.status_code}")
 
 
 def get_connection(conn_id):
@@ -50,15 +53,15 @@ def get_connection(conn_id):
         "Authorization": f"Bearer {token}",
     }
 
-    print(f"Fetching connection {conn_id}")
+    logger.info(f"Fetching connection {conn_id}")
 
     response = requests.get(url, headers=headers)
 
     if response.status_code == 200:
-        print("Conneciton fetched successfully")
+        logger.info("Conneciton fetched successfully")
         return json.loads(response.text)
     else:
-        print(f"Error fetcing conneciton message: {response.status_code}")
+        logger.info(f"Error fetcing conneciton message: {response.status_code}")
 
     return None
 
@@ -77,18 +80,18 @@ def send_message(conn_id, content):
     }
     data = {"content": content}
 
-    print(f"Sending message to {conn_id}, message = {content}")
+    logger.info(f"Sending message to {conn_id}, message = {content}")
 
     response = requests.post(url, headers=headers, data=json.dumps(data))
 
     if response.status_code == 200:
-        print("Message sent successfully")
+        logger.info("Message sent successfully")
     else:
-        print(f"Error sending message: {response.status_code}")
+        logger.info(f"Error sending message: {response.status_code}")
 
 
 def offer_attestation_credential(conn_id):
-    print("issue_attestation_credential")
+    logger.info("issue_attestation_credential")
 
     base_url = os.environ.get("TRACTION_BASE_URL")
     endpoint = "/issue-credential/send-offer"
@@ -108,18 +111,18 @@ def offer_attestation_credential(conn_id):
 
     offer["connection_id"] = conn_id
 
-    print(f"Sending offer to {conn_id}, offer = {offer}")
+    logger.info(f"Sending offer to {conn_id}, offer = {offer}")
 
     response = requests.post(url, headers=headers, data=json.dumps(offer))
 
     if response.status_code == 200:
-        print("Offer sent successfully")
+        logger.info("Offer sent successfully")
     else:
-        print(f"Error sending offer: {response.status_code}")
+        logger.info(f"Error sending offer: {response.status_code}")
 
 
 def get_schema(schema_id):
-    print("get_schema")
+    logger.info("get_schema")
 
     base_url = os.environ.get("TRACTION_BASE_URL")
     endpoint = "/schemas/created"
@@ -136,15 +139,15 @@ def get_schema(schema_id):
     response = requests.get(url, headers=headers, params={"schema_id": schema_id})
 
     if response.status_code == 200:
-        print("Schema queried successfully")
+        logger.info("Schema queried successfully")
     else:
-        print(f"Error quering schema: {response.status_code}")
+        logger.info(f"Error quering schema: {response.status_code}")
 
     return response.json()
 
 
 def create_schema(schema_name, schema_version, attributes):
-    print("create_schema")
+    logger.info("create_schema")
 
     base_url = os.environ.get("TRACTION_BASE_URL")
     endpoint = "/schemas"
@@ -167,8 +170,8 @@ def create_schema(schema_name, schema_version, attributes):
     response = requests.post(url, headers=headers, data=json.dumps(schema))
 
     if response.status_code == 200:
-        print("Schema created successfully")
+        logger.info("Schema created successfully")
     else:
-        print(f"Error creating schema: {response.status_code}")
+        logger.info(f"Error creating schema: {response.status_code}")
 
     return response.json()
