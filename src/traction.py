@@ -4,7 +4,8 @@ import os
 from urllib.parse import urljoin
 from dotenv import load_dotenv
 
-load_dotenv()
+if os.getenv("FLASK_ENV") == "development":
+    load_dotenv()
 
 bearer_token = None
 
