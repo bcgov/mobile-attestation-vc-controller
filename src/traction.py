@@ -90,7 +90,7 @@ def send_message(conn_id, content):
         logger.info(f"Error sending message: {response.status_code}")
 
 
-def offer_attestation_credential(conn_id):
+def offer_attestation_credential(offer):
     logger.info("issue_attestation_credential")
 
     base_url = os.environ.get("TRACTION_BASE_URL")
@@ -105,13 +105,7 @@ def offer_attestation_credential(conn_id):
         "Authorization": f"Bearer {token}",
     }
 
-    message_templates_path = os.getenv("MESSAGE_TEMPLATES_PATH")
-    with open(os.path.join(message_templates_path, "offer.json"), "r") as f:
-        offer = json.load(f)
-
-    offer["connection_id"] = conn_id
-
-    logger.info(f"Sending offer to {conn_id}, offer = {offer}")
+    logger.info(f"Sending offer to {offer['connection_id']}, offer = {offer}")
 
     response = requests.post(url, headers=headers, data=json.dumps(offer))
 

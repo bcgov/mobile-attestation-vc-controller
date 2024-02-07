@@ -193,14 +193,12 @@ def create_app_id_hash():
     return app_id_hash
 
 
-def verify_attestation_statement(attestation_object, nonce):
+def verify_attestation_statement(attestation_object, key_id, nonce):
     try:
         # decode the attestation object is expecting attestation_object
         # to be JSON.
         logger.info("Decoding attestation object...")
-        apple_attestation_object = decode_apple_attestation_object(
-            attestation_object["attestation_object"]
-        )
+        apple_attestation_object = decode_apple_attestation_object(attestation_object)
         if not apple_attestation_object:
             return False
 
@@ -239,7 +237,7 @@ def verify_attestation_statement(attestation_object, nonce):
         pub_key_hash = create_hash_from_pub_key(
             apple_attestation_object["attStmt"]["x5c"][0]
         )
-        key_id_b64 = base64.b64decode(attestation_object["key_id"])
+        key_id_b64 = base64.b64decode(key_id)
         if key_id_b64.hex() != pub_key_hash:
             return False
 
@@ -272,7 +270,7 @@ def verify_attestation_statement(attestation_object, nonce):
         # 9. Verify that the authenticator data’s credentialId field is the same as the
         # key identifier.
         logger.info("Apple Attestation step 9...")
-        key_identifier = base64.b64decode(attestation_object["key_id"])
+        key_identifier = base64.b64decode(key_id)
         cred_id_length = len(key_identifier)
         cred_id_end = cred_id_start + cred_id_length
         credential_id = apple_attestation_object["authData"][cred_id_start:cred_id_end]
