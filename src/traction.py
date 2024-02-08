@@ -20,14 +20,14 @@ def fetch_bearer_token():
         return bearer_token
 
     base_url = os.environ.get("TRACTION_BASE_URL")
-    wallet_id = os.environ.get("TRACTION_WALLET_ID")
-    wallet_key = os.environ.get("TRACTION_WALLET_KEY")
-    endpoint = f"multitenancy/wallet/{wallet_id}/token"
+    tenant_id = os.environ.get("TRACTION_TENANT_ID")
+    api_key = os.environ.get("TRACTION_TENANT_API_KEY")
+    endpoint = f"multitenancy/tenant/{tenant_id}/token"
     url = urljoin(base_url, endpoint)
     headers = {"Content-Type": "application/json", "accept": "application/json"}
-    data = {"wallet_key": wallet_key}
+    data = {"api_key": api_key}
 
-    logger.info(f"Requesting bearer token for walletId {wallet_id}")
+    logger.info(f"Requesting bearer token for walletId {tenant_id}")
 
     response = requests.post(url, headers=headers, data=json.dumps(data))
     if response.status_code == 200:

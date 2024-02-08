@@ -95,8 +95,8 @@ First, create a `.env` file in the root of your folder by copying env.sample to 
 ```bash
 APPLE_ATTESTATION_ROOT_CA_URL="https://www.apple.com/certificateauthority/Apple_App_Attestation_Root_CA.pem"
 TRACTION_BASE_URL="https://traction-tenant-proxy-dev.apps.silver.devops.gov.bc.ca"
-TRACTION_WALLET_ID="b1d5b628-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-TRACTION_WALLET_KEY="286e7818-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+TRACTION_TENANT_ID="b1d5b628-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+TRACTION_TENANT_API_KEY="286e7818-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
 GOOGLE_AUTH_JSON_PATH="path_to_google_oauth_json_key_from_src.json"
 MESSAGE_TEMPLATES_PATH="fixtures/"
 ```
@@ -137,8 +137,8 @@ The general command to deploy this to an OpenShift cluster is:
 
 ```bash
 helm template <RELEASE> ./devops/charts/controller
---set-string wallet_id=<WALLET_ID> \
---set-string wallet_key=<WALLET_KEY> \
+--set-string tenant_id=<TENANT_ID> \
+--set-string tenant_api_key=<TENANT_API_KEY> \
 --set-string redis_url=<REDIS_URL> \
 --set-file google_oauth_key.json=<PATH_TO_GOOGLE_OAUTH_KEY>| \
 oc apply -n <NAMESPACE> -f -
@@ -148,8 +148,8 @@ And example command to deploy to the `e79518-dev` namespace is:
 
 ```bash
 helm template bcwallet ./devops/charts/controller
---set-string wallet_id=123-456-789 \
---set-string wallet_key=abc-def-ghi \
+--set-string tenant_id=123-456-789 \
+--set-string tenant_api_key=abc-def-ghi \
 --set-string redis_url=redis://redis:6379/0 \
 --set-file google_oauth_key.json=./google_oauth_key.json| \
 oc apply -n e79518-dev -f -

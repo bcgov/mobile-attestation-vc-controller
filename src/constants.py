@@ -2,8 +2,8 @@ from enum import Enum
 
 
 class AttestationMethod(Enum):
-    AppAttestService = "AppAttestService"
-    IntegrityAPI = "IntegrityAPI"
+    AppleAppAttestation = "apple:app-attest"
+    GooglePlayIntegrity = "google:play-integrity"
 
 
 app_vendor = "Government of British Columbia"

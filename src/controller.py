@@ -80,7 +80,11 @@ def handle_challenge_response(connection_id, content):
     platform = content.get("platform")
     app_version = content.get("app_version")
     os_version_parts = content.get("os_version").split(" ")
-
+    method = (
+        AttestationMethod.AppleAppAttestation.name
+        if platform == "apple"
+        else AttestationMethod.GooglePlayIntegrity.name
+    )
     is_valid_challenge = False
 
     # fetch nonce from cache using connection id as key
@@ -94,11 +98,6 @@ def handle_challenge_response(connection_id, content):
     with open(os.path.join(message_templates_path, "offer.json"), "r") as f:
         offer = json.load(f)
 
-    method = (
-        AttestationMethod.AppAttestService.name
-        if platform == "apple"
-        else AttestationMethod.IntegrityAPI.name
-    )
     offer["connection_id"] = connection_id
     offer["credential_preview"]["attributes"] = [
         {"name": "operating_system", "value": os_version_parts[0]},
