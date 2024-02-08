@@ -47,7 +47,6 @@ def handle_request_nonce(connection_id, content):
     logger.info("handle_request_nonce")
     connection = get_connection(connection_id)
     logger.info(f"fetched connection, id = {connection_id}")
-    print(connection)
 
     if connection is None or connection["rfc23_state"] != "completed":
         logger.info(f"connection not completed, id = {connection_id}")
