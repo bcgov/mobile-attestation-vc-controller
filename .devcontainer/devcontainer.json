@@ -6,9 +6,9 @@
   ],
   "service": "workspace",
   // "forwardPorts": [
-  //   5000
+  //   5501
   // ],
-  // "appPort": 5000,
+  // "appPort": 5501,
   // Mount the local workspace folder into the container
   "workspaceMount": "source=${localWorkspaceFolder},target=/work,type=bind",
   "workspaceFolder": "/work",

@@ -5,23 +5,45 @@ networks:
     name: local_network
 
 services:
-  redis:
+  redis-1:
     image: redis:7.2.3-alpine
-    ports:
-      - "6379:6379"
-    tty: true
+    command: redis-server --appendonly yes --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --port 6379
+    environment:
+      - "IP=0.0.0.0"
     networks:
       - local_network
+    ports:
+      - "6379:6379"
+
+  redis-2:
+    image: redis:7.2.3-alpine
+    command: redis-server --appendonly yes --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --port 6379
+    environment:
+      - "IP=0.0.0.0"
+    networks:
+      - local_network
+    ports:
+      - "6380:6379"
+
+  redis-3:
+    image: redis:7.2.3-alpine
+    command: redis-server --appendonly yes --cluster-enabled yes --cluster-config-file nodes.conf --cluster-node-timeout 5000 --port 6379
+    environment:
+      - "IP=0.0.0.0"
+    networks:
+      - local_network
+    ports:
+      - "6381:6379"
 
   workspace:
     image: python:3.8.18-bullseye
     working_dir: /work
     volumes:
       - ../:/work
-    ports:
-      - "8443:8443"
+    # ports:
+    #   - "5501:5501"
     tty: true
     networks:
       - local_network
     environment:
-      - REDIS_URI=redis://redis:6379/0
+      - REDIS_URI=redis://redis-1:6379/0

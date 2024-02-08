@@ -46,9 +46,11 @@ def report_failure(connection_id):
 def handle_request_nonce(connection_id, content):
     logger.info("handle_request_nonce")
     connection = get_connection(connection_id)
-    logger.info(f"fetched connection = {connection}")
-    if connection["rfc23_state"] != "completed":
-        logger.info("connection is not completed")
+    logger.info(f"fetched connection, id = {connection_id}")
+    print(connection)
+
+    if connection is None or connection["rfc23_state"] != "completed":
+        logger.info(f"connection not completed, id = {connection_id}")
         return
 
     message_templates_path = os.getenv("MESSAGE_TEMPLATES_PATH")
@@ -93,19 +95,19 @@ def handle_challenge_response(connection_id, content):
         offer = json.load(f)
 
     method = (
-        AttestationMethod.AppAttestService
+        AttestationMethod.AppAttestService.name
         if platform == "apple"
-        else AttestationMethod.IntegrityAPI
+        else AttestationMethod.IntegrityAPI.name
     )
     offer["connection_id"] = connection_id
     offer["credential_preview"]["attributes"] = [
-        {"operating_system": os_version_parts[0]},
-        {"operating_system_version": os_version_parts[1]},
-        {"validation_method": method},
-        {"app_id": ".".join(app_id.split(".")[1:])},
-        {"app_vendor": app_vendor},
-        {"issue_date_dateint": datetime.now().strftime("%Y%m%d")},
-        {"app_version": app_version},
+        {"name": "operating_system", "value": os_version_parts[0]},
+        {"name": "operating_system_version", "value": os_version_parts[1]},
+        {"name": "validation_method", "value": method},
+        {"name": "app_id", "value": ".".join(app_id.split(".")[1:])},
+        {"name": "app_vendor", "value": app_vendor},
+        {"name": "issue_date_dateint", "value": datetime.now().strftime("%Y%m%d")},
+        {"name": "app_version", "value": app_version},
     ]
 
     if platform == "apple":
@@ -173,4 +175,4 @@ def basicmessages():
 
 
 if __name__ == "__main__":
-    server.run(debug=True)
+    server.run(debug=True, port=5501)

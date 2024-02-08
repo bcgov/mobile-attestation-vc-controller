@@ -29,6 +29,67 @@ When run, this program will act as a "controller" to an ACA-py agent. It uses Fl
 
 ### Local Development
 
+<!-- 
+ redis-cli --cluster create redis-1:6379 redis-2:6379 redis-3:6379 --cluster-replicas 0 
+ 
+ 
+ 
+ /data # redis-cli --cluster create redis-1:6379 redis-2:6379 redis-3:6379 --cluster-replicas 0
+>>> Performing hash slots allocation on 3 nodes...
+Master[0] -> Slots 0 - 5460
+Master[1] -> Slots 5461 - 10922
+Master[2] -> Slots 10923 - 16383
+M: db572c8cca958fe96b27f7676db60d633ebb723b redis-1:6379
+   slots:[0-5460] (5461 slots) master
+M: a2bfe0d0508d54090296045d1a10f67bfec81f55 redis-2:6379
+   slots:[5461-10922] (5462 slots) master
+M: 3b4d9783e79bfd1e75661ae57c701da5a5042ec0 redis-3:6379
+   slots:[10923-16383] (5461 slots) master
+Can I set the above configuration? (type 'yes' to accept): yes
+>>> Nodes configuration updated
+>>> Assign a different config epoch to each node
+>>> Sending CLUSTER MEET messages to join the cluster
+Waiting for the cluster to join
+
+>>> Performing Cluster Check (using node redis-1:6379)
+M: db572c8cca958fe96b27f7676db60d633ebb723b redis-1:6379
+   slots:[0-5460] (5461 slots) master
+M: 3b4d9783e79bfd1e75661ae57c701da5a5042ec0 172.21.0.4:6379
+   slots:[10923-16383] (5461 slots) master
+M: a2bfe0d0508d54090296045d1a10f67bfec81f55 172.21.0.3:6379
+   slots:[5461-10922] (5462 slots) master
+[OK] All nodes agree about slots configuration.
+>>> Check for open slots...
+>>> Check slots coverage...
+[OK] All 16384 slots covered.
+
+
+/data # redis-cli cluster info
+cluster_state:ok
+cluster_slots_assigned:16384
+cluster_slots_ok:16384
+cluster_slots_pfail:0
+cluster_slots_fail:0
+cluster_known_nodes:3
+cluster_size:3
+cluster_current_epoch:3
+cluster_my_epoch:1
+cluster_stats_messages_ping_sent:12
+cluster_stats_messages_pong_sent:16
+cluster_stats_messages_sent:28
+cluster_stats_messages_ping_received:14
+cluster_stats_messages_pong_received:12
+cluster_stats_messages_meet_received:2
+cluster_stats_messages_received:28
+total_cluster_links_buffer_limit_exceeded:0
+ 
+ 
+ 
+ 
+ 
+ 
+ -->
+
 First, create a `.env` file in the root of your folder by copying env.sample to `.env`, populate the values with your own. For Android Attestation you will need a Google OAuth JSON key in `/src` configured for your app.
 
 ```bash
