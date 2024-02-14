@@ -176,6 +176,31 @@ def get_schema(schema_id):
     return response.json()
 
 
+def get_cred_def(schema_id):
+    logger.info("get_schema")
+
+    base_url = os.environ.get("TRACTION_BASE_URL")
+    endpoint = "/credential-definitions/created"
+    url = urljoin(base_url, endpoint)
+
+    token = fetch_bearer_token()
+
+    headers = {
+        "Content-Type": "application/json",
+        "accept": "application/json",
+        "Authorization": f"Bearer {token}",
+    }
+
+    response = requests.get(url, headers=headers, params={"schema_id": schema_id})
+
+    if response.status_code == 200:
+        logger.info("Schema queried successfully")
+    else:
+        logger.info(f"Error quering schema: {response.status_code}")
+
+    return response.json()
+
+
 def create_schema(schema_name, schema_version, attributes):
     logger.info("create_schema")
 
@@ -205,3 +230,40 @@ def create_schema(schema_name, schema_version, attributes):
         logger.info(f"Error creating schema: {response.status_code}")
 
     return response.json()
+
+
+def create_cred_def(schema_id, tag, revocation_registry_size=0):
+    logger.info("create_cred_def")
+
+    base_url = os.environ.get("TRACTION_BASE_URL")
+    endpoint = "/credential-definitions"
+    url = urljoin(base_url, endpoint)
+
+    token = fetch_bearer_token()
+
+    headers = {
+        "Content-Type": "application/json",
+        "accept": "application/json",
+        "Authorization": f"Bearer {token}",
+    }
+
+    payload = {
+        "schema_id": schema_id,
+        "tag": tag,
+        "support_revocation": revocation_registry_size > 0,
+    }
+
+    if revocation_registry_size > 0:
+        payload["revocation_registry_size"] = revocation_registry_size
+
+    # print(payload)
+    response = requests.post(url, headers=headers, data=json.dumps(payload))
+
+    if response.status_code == 200:
+        logger.info("Request sent successfully")
+        return response.json()
+
+    else:
+        logger.info(f"Error creating request: {response.status_code}")
+
+    return None
