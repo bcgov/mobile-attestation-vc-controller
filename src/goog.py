@@ -18,6 +18,7 @@ creds = service_account.Credentials.from_service_account_file(
 # should eventually confirm nonce matches here
 def isValidVerdict(verdict, nonce):
     try:
+        print(verdict)
         valid_device_verdicts = ["MEETS_DEVICE_INTEGRITY"]
         verdict_nonce = verdict["tokenPayloadExternal"]["requestDetails"]["nonce"]
         request_package_name = verdict["tokenPayloadExternal"]["requestDetails"][
@@ -40,6 +41,7 @@ def isValidVerdict(verdict, nonce):
         else:
             return False
     except Exception as e:
+        print(e)
         logger.info("Error evaluating verdict:", e)
         return False
 

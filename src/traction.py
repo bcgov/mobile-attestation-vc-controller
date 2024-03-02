@@ -65,6 +65,44 @@ def get_connection(conn_id):
 
     return None
 
+def send_drpc_response(conn_id, thread_id, response):
+    endpoint = "/drpc/response"
+    message = {
+        "response":response,
+        "connection_id": conn_id,
+        "thread_id": thread_id
+    }
+    send_generic_message(conn_id, endpoint, message)
+
+def send_drpc_request(conn_id, request):
+    endpoint = "/drpc/request"
+    message = {
+        "request":request,
+        "connection_id": conn_id
+    }
+    send_generic_message(conn_id, endpoint, message)
+
+def send_generic_message(conn_id, endpoint, message):
+    base_url = os.environ.get("TRACTION_BASE_URL")
+    url = urljoin(base_url, endpoint)
+
+    token = fetch_bearer_token()
+
+    headers = {
+        "Content-Type": "application/json",
+        "accept": "application/json",
+        "Authorization": f"Bearer {token}",
+    }
+
+    logger.info(f"Sending message to {conn_id}, message = {endpoint}")
+
+    response = requests.post(url, headers=headers, data=json.dumps(message))
+
+    if response.status_code == 200:
+        logger.info("Message sent successfully")
+    else:
+        logger.info(f"Error sending message: {response.status_code}")
+
 
 def send_message(conn_id, content):
     base_url = os.environ.get("TRACTION_BASE_URL")
