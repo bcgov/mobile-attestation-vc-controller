@@ -40,8 +40,8 @@ services:
     working_dir: /work
     volumes:
       - ../:/work
-    # ports:
-    #   - "5501:5501"
+    ports:
+      - "5501:5501"
     tty: true
     networks:
       - local_network

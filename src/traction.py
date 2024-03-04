@@ -66,19 +66,17 @@ def get_connection(conn_id):
     return None
 
 def send_drpc_response(conn_id, thread_id, response):
-    endpoint = "/drpc/response"
+    endpoint = f"/drpc/{conn_id}/response"
     message = {
         "response":response,
-        "connection_id": conn_id,
         "thread_id": thread_id
     }
     send_generic_message(conn_id, endpoint, message)
 
 def send_drpc_request(conn_id, request):
-    endpoint = "/drpc/request"
+    endpoint = f"/drpc/{conn_id}/request"
     message = {
         "request":request,
-        "connection_id": conn_id
     }
     send_generic_message(conn_id, endpoint, message)
 
@@ -101,7 +99,7 @@ def send_generic_message(conn_id, endpoint, message):
     if response.status_code == 200:
         logger.info("Message sent successfully")
     else:
-        logger.info(f"Error sending message: {response.status_code}")
+        logger.info(f"Error sending message: {response.status_code} {response.text}")
 
 
 def send_message(conn_id, content):

@@ -20,3 +20,9 @@ __pycache__
 
 # Ignore merge artifacts
 *.orig
+
+# Ignore pyvenv
+pyvenv.cfg
+bin
+lib
+lib64
