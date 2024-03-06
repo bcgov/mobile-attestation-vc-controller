@@ -6,7 +6,7 @@ sys.path.insert(0, "./src")
 
 from traction import get_cred_def, create_cred_def
 
-tag = "default_14"
+tag = "bcwallet"
 revocation_registry_size = 0
 schema_id = f"{os.environ.get('TRACTION_LEGACY_DID')}:2:app_attestation:1.0"
 cred_def_id_regex = r"{}:3:CL:[0-9]+:{}".format(
