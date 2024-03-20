@@ -82,12 +82,7 @@ cluster_stats_messages_pong_received:12
 cluster_stats_messages_meet_received:2
 cluster_stats_messages_received:28
 total_cluster_links_buffer_limit_exceeded:0
- 
- 
- 
- 
- 
- 
+
  -->
 
 First, create a `.env` file in the root of your folder by copying `env.sample` to `.env`, populate the values with your own. For Android Attestation you will need a Google OAuth JSON key in `/src` configured for your app.
@@ -134,9 +129,10 @@ The general command to deploy this to an OpenShift cluster is:
 
 ```bash
 helm template <RELEASE> ./devops/charts/controller
+-f ./devops/charts/controller/values_<ENVIRONMENT>.yaml
 --set-string tenant_id=<TENANT_ID> \
 --set-string tenant_api_key=<TENANT_API_KEY> \
---set-string redis_url=<REDIS_URL> \
+--set-string tenant_legacy_did=<TENANT_LEGACY_DID> \
 --set-file google_oauth_key.json=<PATH_TO_GOOGLE_OAUTH_KEY>| \
 oc apply -n <NAMESPACE> -f -
 ```
@@ -145,10 +141,11 @@ And example command to deploy to the `e79518-dev` namespace is:
 
 ```bash
 helm template bcwallet ./devops/charts/controller
---set-string tenant_id=123-456-789 \
---set-string tenant_api_key=abc-def-ghi \
---set-string redis_url=redis://redis:6379/0 \
---set-file google_oauth_key.json=./google_oauth_key.json| \
+-f ./devops/charts/controller/values_dev.yaml
+--set-string tenant_id="$TRACTION_TENANT_ID"
+--set-string tenant_api_key="$TRACTION_TENANT_API_KEY"
+--set-string tenant_legacy_did="$TRACTION_DID"
+--set-file google_oauth_key.json=./google_oauth_key.json|
 oc apply -n e79518-dev -f -
 ```
 

@@ -4,13 +4,24 @@ import secrets
 import logging
 import random
 from flask import Flask, request, make_response
-from traction import send_message, send_drpc_response, send_drpc_request, offer_attestation_credential
+from traction import (
+    send_message,
+    send_drpc_response,
+    send_drpc_request,
+    offer_attestation_credential,
+)
 from apple import verify_attestation_statement
 from goog import verify_integrity_token
 import os
 from dotenv import load_dotenv
 from redis_config import redis_instance
-from constants import auto_expire_nonce, app_id, app_vendor, AttestationMethod, attestation_cred_def_ids
+from constants import (
+    auto_expire_nonce,
+    app_id,
+    app_vendor,
+    AttestationMethod,
+    attestation_cred_def_ids,
+)
 from datetime import datetime
 
 if os.getenv("FLASK_ENV") == "development":
@@ -20,6 +31,7 @@ server = Flask(__name__)
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+
 def handle_drpc_request(drpc_request, connection_id):
     handler = {
         "request_nonce": handle_drpc_request_nonce,
@@ -27,8 +39,14 @@ def handle_drpc_request(drpc_request, connection_id):
 
     return handler(drpc_request, connection_id)
 
+
 def handle_drpc_default(drpc_request, connection_id):
-    return {"jsonrpc": "2.0", "error": {"code": -32601, "message": "method not found"}, "id": drpc_request["id"]}
+    return {
+        "jsonrpc": "2.0",
+        "error": {"code": -32601, "message": "method not found"},
+        "id": drpc_request["id"],
+    }
+
 
 def handle_drpc_request_nonce(drpc_request, connection_id):
     nonce = secrets.token_hex(16)
@@ -45,6 +63,7 @@ def handle_drpc_request_nonce(drpc_request, connection_id):
     send_drpc_request(connection_id, request_attestation)
 
     return {}
+
 
 def handle_drpc_challenge_response(drpc_response, connection_id):
     logger.info("handle_attestation_challenge")
@@ -122,6 +141,7 @@ def handle_drpc_challenge_response(drpc_response, connection_id):
         logger.info("invalid challenge")
         report_failure(connection_id)
 
+
 def report_failure(connection_id):
     message_templates_path = os.getenv("MESSAGE_TEMPLATES_PATH")
     with open(os.path.join(message_templates_path, "report_failure.json"), "r") as f:
@@ -135,10 +155,14 @@ def report_failure(connection_id):
     send_message(connection_id, base64_str)
 
 
-@server.route("/topic/ping/", methods=["POST"])
+@server.route("/topic/ping/", methods=["POST", "GET"])
 def ping():
-    logger.info("Run POST /ping/")
+    if request.method == "POST":
+        logger.info("Run POST /ping/")
+    elif request.method == "GET":
+        logger.info("Run GET /ping/")
     return make_response("", 204)
+
 
 @server.route("/topic/drpc_request/", methods=["POST"])
 def drpc_request():
@@ -153,6 +177,7 @@ def drpc_request():
     send_drpc_response(connection_id, thread_id, drpc_response)
 
     return make_response("", 204)
+
 
 @server.route("/topic/drpc_response/", methods=["POST"])
 def drpc_response():
