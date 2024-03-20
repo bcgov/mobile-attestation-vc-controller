@@ -20,7 +20,7 @@
             },
             {
                 "name": "app_vendor",
-                "value": "Govornment of British Columbia"
+                "value": "Government of British Columbia"
             },
             {
                 "name": "issue_date_dateint",
@@ -36,5 +36,5 @@
             }
         ]
     },
-    "comment": "This is a comment"
+    "comment": ""
 }

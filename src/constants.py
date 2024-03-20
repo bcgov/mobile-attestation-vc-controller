@@ -19,3 +19,10 @@ cred_id_start = 55
 
 # Redis
 auto_expire_nonce = 60 * 10  # 10 minutes
+
+# Attestation cred def IDs
+attestation_cred_def_ids = [
+    "NXp6XcGeCR2MviWuY51Dva:3:CL:33557:bcwallet",
+    "RycQpZ9b4NaXuT5ZGjXkUE:3:CL:120:bcwallet",
+    "XqaRXJt4sXE6TRpfGpVbGw:3:CL:655:bcwallet",
+]

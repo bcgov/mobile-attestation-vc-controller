@@ -4,7 +4,8 @@ from googleapiclient.discovery import build
 from google.oauth2 import service_account
 from dotenv import load_dotenv
 
-if os.getenv("FLASK_ENV") == "development":
+dev_mode = os.getenv("FLASK_ENV") == "development"
+if dev_mode:
     load_dotenv()
 
 logging.basicConfig(level=logging.INFO)
@@ -25,7 +26,7 @@ def isValidVerdict(verdict, nonce):
             "requestPackageName"
         ]
         package_name = verdict["tokenPayloadExternal"]["appIntegrity"]["packageName"]
-        # app_verdict = verdict['tokenPayloadExternal']['appIntegrity']['appRecognitionVerdict']
+        app_verdict = verdict["tokenPayloadExternal"]["appIntegrity"]["appRecognitionVerdict"]
         device_verdicts = verdict["tokenPayloadExternal"]["deviceIntegrity"][
             "deviceRecognitionVerdict"
         ]
@@ -33,9 +34,12 @@ def isValidVerdict(verdict, nonce):
             verdict_nonce == nonce
             and request_package_name == "ca.bc.gov.BCWallet"
             and package_name == "ca.bc.gov.BCWallet"
-            and
-            # app_verdict == 'PLAY_RECOGNIZED' and
-            set(valid_device_verdicts).issubset(device_verdicts)
+            and set(valid_device_verdicts).issubset(device_verdicts)
+            and (
+                app_verdict == 'PLAY_RECOGNIZED'
+                or
+                dev_mode
+            )
         ):
             return True
         else:

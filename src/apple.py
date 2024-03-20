@@ -261,7 +261,6 @@ def verify_attestation_statement(attestation_object, key_id, nonce):
         # bytes if operating in the production environment.
         logger.info("Apple Attestation step 8...")
         aaguid = apple_attestation_object["authData"][aaguid_start:aaguid_end]
-        # this step is failing so commenting out for now
         if aaguid != bytearray(b"appattestdevelop") and aaguid != bytearray(
             b"appattest\x00\x00\x00\x00\x00\x00\x00"
         ):

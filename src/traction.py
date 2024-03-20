@@ -68,7 +68,7 @@ def get_connection(conn_id):
 def send_drpc_response(conn_id, thread_id, response):
     endpoint = f"/drpc/{conn_id}/response"
     message = {
-        "response":response,
+        "response": response,
         "thread_id": thread_id
     }
     send_generic_message(conn_id, endpoint, message)
@@ -76,7 +76,7 @@ def send_drpc_response(conn_id, thread_id, response):
 def send_drpc_request(conn_id, request):
     endpoint = f"/drpc/{conn_id}/request"
     message = {
-        "request":request,
+        "request": request,
     }
     send_generic_message(conn_id, endpoint, message)
 

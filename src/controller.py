@@ -4,13 +4,13 @@ import secrets
 import logging
 import random
 from flask import Flask, request, make_response
-from traction import get_connection, send_message, send_drpc_response, send_drpc_request, offer_attestation_credential
+from traction import send_message, send_drpc_response, send_drpc_request, offer_attestation_credential
 from apple import verify_attestation_statement
 from goog import verify_integrity_token
 import os
 from dotenv import load_dotenv
 from redis_config import redis_instance
-from constants import auto_expire_nonce, app_id, app_vendor, AttestationMethod
+from constants import auto_expire_nonce, app_id, app_vendor, AttestationMethod, attestation_cred_def_ids
 from datetime import datetime
 
 if os.getenv("FLASK_ENV") == "development":
@@ -28,11 +28,9 @@ def handle_drpc_request(drpc_request, connection_id):
     return handler(drpc_request, connection_id)
 
 def handle_drpc_default(drpc_request, connection_id):
-    return {"jsonrpc": "2.0", "error":{"code": -32601, "message": "method not found"}, "id": drpc_request["id"]}
+    return {"jsonrpc": "2.0", "error": {"code": -32601, "message": "method not found"}, "id": drpc_request["id"]}
 
 def handle_drpc_request_nonce(drpc_request, connection_id):
-
-    message_templates_path = os.getenv("MESSAGE_TEMPLATES_PATH")
     nonce = secrets.token_hex(16)
     request_attestation = {
         "jsonrpc": "2.0",
@@ -80,6 +78,19 @@ def handle_drpc_challenge_response(drpc_response, connection_id):
     with open(os.path.join(message_templates_path, "offer.json"), "r") as f:
         offer = json.load(f)
 
+    did = os.getenv("TRACTION_LEGACY_DID")
+
+    def pred(cred_def):
+        return did in cred_def
+
+    # find the cred def id that contains the current traction issuer did
+    cred_def_id = next(filter(pred, attestation_cred_def_ids), None)
+    if cred_def_id is None:
+        logger.info("No matching cred def id")
+        report_failure(connection_id)
+        return
+
+    offer["cred_def_id"] = cred_def_id
     offer["connection_id"] = connection_id
     offer["credential_preview"]["attributes"] = [
         {"name": "operating_system", "value": os_version_parts[0]},
@@ -93,7 +104,7 @@ def handle_drpc_challenge_response(drpc_response, connection_id):
 
     if platform == "apple":
         logger.info("testing apple challenge")
-        key_id = content.get("key_id")
+        key_id = attestation_resp.get("key_id")
         is_valid_challenge = verify_attestation_statement(
             attestation_object, key_id, nonce
         )
@@ -102,14 +113,14 @@ def handle_drpc_challenge_response(drpc_response, connection_id):
         is_valid_challenge = verify_integrity_token(attestation_object, nonce)
     else:
         logger.info("unsupported platform")
-        report_failure(connection_id) 
+        report_failure(connection_id)
 
     if is_valid_challenge:
         logger.info("valid challenge")
         offer_attestation_credential(offer)
     else:
         logger.info("invalid challenge")
-        report_failure(connection_id) 
+        report_failure(connection_id)
 
 def report_failure(connection_id):
     message_templates_path = os.getenv("MESSAGE_TEMPLATES_PATH")
@@ -148,7 +159,6 @@ def drpc_response():
     logger.info("Run POST /topic/drpc_response/")
     message = request.get_json()
     connection_id = message["connection_id"]
-    thread_id = message["thread_id"]
     print(message)
     req = message["response"]["request"]
     if req["method"] == "request_attestation":
