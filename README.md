@@ -132,7 +132,7 @@ helm template <RELEASE> ./devops/charts/controller
 -f ./devops/charts/controller/values_<ENVIRONMENT>.yaml
 --set-string tenant_id=<TENANT_ID> \
 --set-string tenant_api_key=<TENANT_API_KEY> \
---set-string tenant_legacy_did=<TENANT_LEGACY_DID> \
+--set-string traction_legacy_did=<TRACTION_LEGACY_DID> \
 --set-file google_oauth_key.json=<PATH_TO_GOOGLE_OAUTH_KEY>| \
 oc apply -n <NAMESPACE> -f -
 ```
@@ -144,7 +144,7 @@ helm template bcwallet ./devops/charts/controller
 -f ./devops/charts/controller/values_dev.yaml
 --set-string tenant_id="$TRACTION_TENANT_ID"
 --set-string tenant_api_key="$TRACTION_TENANT_API_KEY"
---set-string tenant_legacy_did="$TRACTION_DID"
+--set-string traction_legacy_did="$TRACTION_LEGACY_DID"
 --set-file google_oauth_key.json=./google_oauth_key.json|
 oc apply -n e79518-dev -f -
 ```
