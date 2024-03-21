@@ -69,6 +69,8 @@ spec:
               value:  {{.Values.env.GOOGLE_AUTH_JSON_PATH | quote}}  
             - name: MESSAGE_TEMPLATES_PATH
               value:  {{.Values.env.MESSAGE_TEMPLATES_PATH | quote}}
+            - name: ALLOW_TEST_BUILDS
+              value:  {{.Values.env.ALLOW_TEST_BUILDS | quote}}
             - name: REDIS_URI
               valueFrom:
                 secretKeyRef:
