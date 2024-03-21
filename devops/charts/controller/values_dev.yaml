@@ -26,7 +26,7 @@ env:
   MESSAGE_TEMPLATES_PATH: "/opt/fixtures/"
   # This is needed for Google Play verificaiton to accept
   # non-production playstore builds.
-  ALLOW_TEST_BUILDS: "false"
+  ALLOW_TEST_BUILDS: "true"
 
 resources:
   requests:
