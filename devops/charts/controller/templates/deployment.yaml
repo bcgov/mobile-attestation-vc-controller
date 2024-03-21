@@ -43,18 +43,18 @@ spec:
             - name: google-oauth-key
               mountPath: {{.Values.env.GOOGLE_AUTH_JSON_PATH }} 
               subPath: {{.Values.env.GOOGLE_AUTH_JSON_PATH | base}}
-          # livenessProbe:
-          #   httpGet:
-          #     path: /api/v1/ehlo
-          #     port: http
-          #   initialDelaySeconds: 60
-          #   periodSeconds: 3
-          # readinessProbe:
-          #   httpGet:
-          #     path: /api/v1/ehlo
-          #     port: http
-          #   initialDelaySeconds: 60
-          #   timeoutSeconds: 3
+          livenessProbe:
+            httpGet:
+              path: /topic/ping/
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 3
+          readinessProbe:
+            httpGet:
+              path: /topic/ping/
+              port: http
+            initialDelaySeconds: 10
+            timeoutSeconds: 3
           envFrom:
             - secretRef:
                 name: {{ include "attestation-controller.fullname" . }}-traction-creds
