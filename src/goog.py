@@ -5,6 +5,8 @@ from google.oauth2 import service_account
 from dotenv import load_dotenv
 
 dev_mode = os.getenv("FLASK_ENV") == "development"
+allow_test_builds = os.getenv("ALLOW_TEST_BUILDS") == "true"
+
 if dev_mode:
     load_dotenv()
 
@@ -26,20 +28,19 @@ def isValidVerdict(verdict, nonce):
             "requestPackageName"
         ]
         package_name = verdict["tokenPayloadExternal"]["appIntegrity"]["packageName"]
-        app_verdict = verdict["tokenPayloadExternal"]["appIntegrity"]["appRecognitionVerdict"]
+        app_verdict = verdict["tokenPayloadExternal"]["appIntegrity"][
+            "appRecognitionVerdict"
+        ]
         device_verdicts = verdict["tokenPayloadExternal"]["deviceIntegrity"][
             "deviceRecognitionVerdict"
         ]
+
         if (
             verdict_nonce == nonce
             and request_package_name == "ca.bc.gov.BCWallet"
             and package_name == "ca.bc.gov.BCWallet"
             and set(valid_device_verdicts).issubset(device_verdicts)
-            and (
-                app_verdict == 'PLAY_RECOGNIZED'
-                or
-                dev_mode
-            )
+            and (app_verdict == "PLAY_RECOGNIZED" or allow_test_builds)
         ):
             return True
         else:
@@ -59,6 +60,7 @@ def verify_integrity_token(token, nonce):
         verdict = instance.decodeIntegrityToken(
             packageName="ca.bc.gov.BCWallet", body=body
         ).execute()
+
         if isValidVerdict(verdict, nonce):
             return True
         else:
