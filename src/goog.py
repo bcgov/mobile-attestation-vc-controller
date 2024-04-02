@@ -12,11 +12,6 @@ if dev_mode:
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-path = os.getenv("GOOGLE_AUTH_JSON_PATH")
-creds = service_account.Credentials.from_service_account_file(
-    path, scopes=["https://www.googleapis.com/auth/playintegrity"]
-)
-
 
 # should eventually confirm nonce matches here
 def isValidVerdict(verdict, nonce):
@@ -54,6 +49,10 @@ def isValidVerdict(verdict, nonce):
 # decrypt the integrity token on google's servers
 def verify_integrity_token(token, nonce):
     try:
+        path = os.getenv("GOOGLE_AUTH_JSON_PATH")
+        creds = service_account.Credentials.from_service_account_file(
+            path, scopes=["https://www.googleapis.com/auth/playintegrity"]
+        )
         service = build("playintegrity", "v1", credentials=creds)
         body = {"integrityToken": token}
         instance = service.v1()
