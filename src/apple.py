@@ -80,9 +80,9 @@ def verify_x5c_certificates(attestation_object):
             attestation_object["attStmt"]["x5c"][1], default_backend()
         )
 
-        logger.info("root_certificate", root_certificate.subject)
-        logger.info("credential_certificate", credential_certificate.subject)
-        logger.info("intermediate_certificate", intermediate_certificate.subject)
+        logger.info("root_certificate: %s", root_certificate.subject)
+        logger.info("credential_certificate: %s", credential_certificate.subject)
+        logger.info("intermediate_certificate: %s", intermediate_certificate.subject)
 
         if intermediate_certificate.issuer == root_certificate.subject:
             logger.info("The child certificate was issued by the parent certificate.")

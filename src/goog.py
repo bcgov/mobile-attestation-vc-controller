@@ -3,6 +3,7 @@ import logging
 from googleapiclient.discovery import build
 from google.oauth2 import service_account
 from dotenv import load_dotenv
+from constants import integrity_scope, bc_wallet_package_name, PLAY_RECOGNIZED
 
 dev_mode = os.getenv("FLASK_ENV") == "development"
 allow_test_builds = os.getenv("ALLOW_TEST_BUILDS") == "true"
@@ -32,10 +33,10 @@ def isValidVerdict(verdict, nonce):
 
         if (
             verdict_nonce == nonce
-            and request_package_name == "ca.bc.gov.BCWallet"
-            and package_name == "ca.bc.gov.BCWallet"
+            and request_package_name == bc_wallet_package_name
+            and package_name == bc_wallet_package_name
             and set(valid_device_verdicts).issubset(device_verdicts)
-            and (app_verdict == "PLAY_RECOGNIZED" or allow_test_builds)
+            and (app_verdict == PLAY_RECOGNIZED or allow_test_builds)
         ):
             return True
         else:
@@ -51,13 +52,13 @@ def verify_integrity_token(token, nonce):
     try:
         path = os.getenv("GOOGLE_AUTH_JSON_PATH")
         creds = service_account.Credentials.from_service_account_file(
-            path, scopes=["https://www.googleapis.com/auth/playintegrity"]
+            path, scopes=[integrity_scope]
         )
         service = build("playintegrity", "v1", credentials=creds)
         body = {"integrityToken": token}
         instance = service.v1()
         verdict = instance.decodeIntegrityToken(
-            packageName="ca.bc.gov.BCWallet", body=body
+            packageName=bc_wallet_package_name, body=body
         ).execute()
 
         if isValidVerdict(verdict, nonce):

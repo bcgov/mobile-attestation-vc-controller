@@ -17,6 +17,11 @@ aaguid_start = 37
 aaguid_end = 53
 cred_id_start = 55
 
+# Google Play Integrity
+integrity_scope = "https://www.googleapis.com/auth/playintegrity"
+bc_wallet_package_name = "ca.bc.gov.BCWallet"
+PLAY_RECOGNIZED = "PLAY_RECOGNIZED"
+
 # Redis
 auto_expire_nonce = 60 * 10  # 10 minutes
 
