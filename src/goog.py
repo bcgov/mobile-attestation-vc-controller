@@ -42,8 +42,7 @@ def isValidVerdict(verdict, nonce):
         else:
             return False
     except Exception as e:
-        print(e)
-        logger.info("Error evaluating verdict:", e)
+        logger.error(f"Error evaluating verdict: {e}")
         return False
 
 
@@ -66,7 +65,7 @@ def verify_integrity_token(token, nonce):
         else:
             return False
     except Exception as e:
-        logger.info("Error verifying integrity token:", e)
+        logger.error(f"Error verifying integrity token: {e}")
         return False
 
 

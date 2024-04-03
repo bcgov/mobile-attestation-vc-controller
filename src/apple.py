@@ -80,9 +80,9 @@ def verify_x5c_certificates(attestation_object):
             attestation_object["attStmt"]["x5c"][1], default_backend()
         )
 
-        logger.info("root_certificate: %s", root_certificate.subject)
-        logger.info("credential_certificate: %s", credential_certificate.subject)
-        logger.info("intermediate_certificate: %s", intermediate_certificate.subject)
+        logger.info(f"root_certificate: {str(root_certificate.subject)}")
+        logger.info(f"credential_certificate: {str(credential_certificate.subject)}")
+        logger.info(f"intermediate_certificate: {str(intermediate_certificate.subject)}")
 
         if intermediate_certificate.issuer == root_certificate.subject:
             logger.info("The child certificate was issued by the parent certificate.")
@@ -280,7 +280,7 @@ def verify_attestation_statement(attestation_object, key_id, nonce):
         return True
 
     except Exception as e:
-        logger.info("Error during Apple attestation:", e)
+        logger.error(f"Error during Apple attestation: {e}")
         return False
 
 

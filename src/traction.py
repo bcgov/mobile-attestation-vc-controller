@@ -37,12 +37,12 @@ def fetch_bearer_token():
 
         bearer_token = response_data["token"]
         if bearer_token is None:
-            logger.info("Token doesn't exist in response data")
+            logger.error("Token doesn't exist in response data")
 
         return bearer_token
     else:
-        logger.info(f"Error fetcing token: {response.status_code}")
-        logger.info(f"Text content for error: {response.text}")
+        logger.error(f"Error fetching token: {response.status_code}")
+        logger.error(f"Text content for error: {response.text}")
 
 
 def get_connection(conn_id):
@@ -66,8 +66,8 @@ def get_connection(conn_id):
         logger.info("Connection fetched successfully")
         return json.loads(response.text)
     else:
-        logger.info(f"Error fetching connection message: {response.status_code}")
-        logger.info(f"Text content for error: {response.text}")
+        logger.error(f"Error fetching connection message: {response.status_code}")
+        logger.error(f"Text content for error: {response.text}")
 
     return None
 
@@ -105,7 +105,7 @@ def send_generic_message(conn_id, endpoint, message):
     if response.status_code == 200:
         logger.info("Message sent successfully")
     else:
-        logger.info(f"Error sending message: {response.status_code} {response.text}")
+        logger.error(f"Error sending message: {response.status_code} {response.text}")
 
 
 def send_message(conn_id, content):
@@ -129,7 +129,7 @@ def send_message(conn_id, content):
     if response.status_code == 200:
         logger.info("Message sent successfully")
     else:
-        logger.info(f"Error sending message: {response.status_code}")
+        logger.error(f"Error sending message: {response.status_code}")
 
 
 def offer_attestation_credential(offer):
@@ -154,8 +154,8 @@ def offer_attestation_credential(offer):
     if response.status_code == 200:
         logger.info("Offer sent successfully")
     else:
-        logger.info(f"Error sending offer: {response.status_code}")
-        logger.info(f"Text content for error: {response.text}")
+        logger.error(f"Error sending offer: {response.status_code}")
+        logger.error(f"Text content for error: {response.text}")
 
 
 def get_schema(schema_id):
@@ -178,8 +178,8 @@ def get_schema(schema_id):
     if response.status_code == 200:
         logger.info("Schema queried successfully")
     else:
-        logger.info(f"Error querying schema: {response.status_code}")
-        logger.info(f"Text content for error: {response.text}")
+        logger.error(f"Error querying schema: {response.status_code}")
+        logger.error(f"Text content for error: {response.text}")
 
     return response.json()
 
@@ -204,8 +204,8 @@ def get_cred_def(schema_id):
     if response.status_code == 200:
         logger.info("Cred def queried successfully")
     else:
-        logger.info(f"Error querying cred def: {response.status_code}")
-        logger.info(f"Text content for error: {response.text}")
+        logger.error(f"Error querying cred def: {response.status_code}")
+        logger.error(f"Text content for error: {response.text}")
 
     return response.json()
 
@@ -236,8 +236,8 @@ def create_schema(schema_name, schema_version, attributes):
     if response.status_code == 200:
         logger.info("Schema created successfully")
     else:
-        logger.info(f"Error creating schema: {response.status_code}")
-        logger.info(f"Text content for error: {response.text}")
+        logger.error(f"Error creating schema: {response.status_code}")
+        logger.error(f"Text content for error: {response.text}")
 
     return response.json()
 
@@ -274,7 +274,7 @@ def create_cred_def(schema_id, tag, revocation_registry_size=0):
         return response.json()
 
     else:
-        logger.info(f"Error creating request: {response.status_code}")
-        logger.info(f"Text content for error: {response.text}")
+        logger.error(f"Error creating request: {response.status_code}")
+        logger.error(f"Text content for error: {response.text}")
 
     return None
