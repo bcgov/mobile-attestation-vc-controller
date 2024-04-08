@@ -4,6 +4,8 @@ import os
 from urllib.parse import urljoin
 from dotenv import load_dotenv
 import logging
+import jwt
+import datetime
 
 if os.getenv("FLASK_ENV") == "development":
     load_dotenv()
@@ -13,11 +15,32 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
+def is_token_expired(token):
+    try:
+        # Bypass signature verification since we only need to check the
+        # expiration claim and this is our token (we trust it).
+        decoded = jwt.decode(token, options={"verify_signature": False})
+
+        # Extract the expiration claim, and check if the token is expired.
+        exp_timestamp = decoded.get("exp")
+        if exp_timestamp:
+            exp = datetime.datetime.fromtimestamp(exp_timestamp, datetime.timezone.utc)
+            if exp < datetime.datetime.now(datetime.timezone.utc):
+                return True
+            else:
+                return False
+        else:
+            return True
+    except Exception as e:
+        # Handle potential exceptions
+        print(f"An error occurred: {e}")
+
+
 def fetch_bearer_token():
     global bearer_token
 
-    if bearer_token:
-        logger.info("Found existing bearer token, returning it")
+    if bearer_token and not is_token_expired(bearer_token):
+        logger.info("Found existing unexpired bearer token, returning it")
         return bearer_token
 
     base_url = os.environ.get("TRACTION_BASE_URL")
@@ -71,13 +94,12 @@ def get_connection(conn_id):
 
     return None
 
+
 def send_drpc_response(conn_id, thread_id, response):
     endpoint = f"/drpc/{conn_id}/response"
-    message = {
-        "response": response,
-        "thread_id": thread_id
-    }
+    message = {"response": response, "thread_id": thread_id}
     send_generic_message(conn_id, endpoint, message)
+
 
 def send_drpc_request(conn_id, request):
     endpoint = f"/drpc/{conn_id}/request"
@@ -85,6 +107,7 @@ def send_drpc_request(conn_id, request):
         "request": request,
     }
     send_generic_message(conn_id, endpoint, message)
+
 
 def send_generic_message(conn_id, endpoint, message):
     base_url = os.environ.get("TRACTION_BASE_URL")
@@ -272,7 +295,6 @@ def create_cred_def(schema_id, tag, revocation_registry_size=0):
     if response.status_code == 200:
         logger.info("Request sent successfully")
         return response.json()
-
     else:
         logger.error(f"Error creating request: {response.status_code}")
         logger.error(f"Text content for error: {response.text}")
