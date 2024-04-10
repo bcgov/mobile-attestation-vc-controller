@@ -22,7 +22,7 @@ image:
   tag: "e082857"
 
 env:
-  TRACTION_BASE_URL: "https://traction-tenant-proxy-test.apps.silver.devops.gov.bc.ca"
+  TRACTION_BASE_URL: "https://traction-tenant-proxy-prod.apps.silver.devops.gov.bc.ca"
   APPLE_ATTESTATION_ROOT_CA_URL: "https://www.apple.com/certificateauthority/Apple_App_Attestation_Root_CA.pem"
   GOOGLE_AUTH_JSON_PATH: "/opt/controller/google_oauth_key.json"
   MESSAGE_TEMPLATES_PATH: "/opt/fixtures/"
