@@ -141,7 +141,7 @@ def handle_drpc_challenge_response(drpc_response, connection_id):
 
 
 def report_failure(connection_id):
-    pass
+    pass  # Will implement as DRPC once BC Wallet is capable of handling
 
 
 @server.route("/topic/ping/", methods=["POST", "GET"])
