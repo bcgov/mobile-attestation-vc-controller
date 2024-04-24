@@ -1,11 +1,9 @@
-import base64
 import json
 import secrets
 import logging
 import random
 from flask import Flask, request, make_response
 from traction import (
-    send_message,
     send_drpc_response,
     send_drpc_request,
     offer_attestation_credential,
@@ -143,16 +141,7 @@ def handle_drpc_challenge_response(drpc_response, connection_id):
 
 
 def report_failure(connection_id):
-    message_templates_path = os.getenv("MESSAGE_TEMPLATES_PATH")
-    with open(os.path.join(message_templates_path, "report_failure.json"), "r") as f:
-        report_failure = json.load(f)
-
-    json_str = json.dumps(report_failure)
-    base64_str = base64.b64encode(json_str.encode("utf-8")).decode("utf-8")
-
-    logger.info(f"sending report failure message to {connection_id}")
-
-    send_message(connection_id, base64_str)
+    pass
 
 
 @server.route("/topic/ping/", methods=["POST", "GET"])

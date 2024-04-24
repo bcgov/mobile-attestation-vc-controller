@@ -131,30 +131,6 @@ def send_generic_message(conn_id, endpoint, message):
         logger.error(f"Error sending message: {response.status_code} {response.text}")
 
 
-def send_message(conn_id, content):
-    base_url = os.environ.get("TRACTION_BASE_URL")
-    endpoint = f"/connections/{conn_id}/send-message"
-    url = urljoin(base_url, endpoint)
-
-    token = fetch_bearer_token()
-
-    headers = {
-        "Content-Type": "application/json",
-        "accept": "application/json",
-        "Authorization": f"Bearer {token}",
-    }
-    data = {"content": content}
-
-    logger.info(f"Sending message to {conn_id}, message = {content}")
-
-    response = requests.post(url, headers=headers, data=json.dumps(data))
-
-    if response.status_code == 200:
-        logger.info("Message sent successfully")
-    else:
-        logger.error(f"Error sending message: {response.status_code}")
-
-
 def offer_attestation_credential(offer):
     logger.info("issue_attestation_credential")
 
