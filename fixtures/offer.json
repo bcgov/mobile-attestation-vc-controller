@@ -2,7 +2,7 @@
     "auto_issue": true,
     "auto_remove": true,
     "trace": true,
-    "cred_def_id": "NXp6XcGeCR2MviWuY51Dva:3:CL:33557:bcwallet",
+    "cred_def_id": "NXp6XcGeCR2MviWuY51Dva:3:CL:33557:bcwallet_dev",
     "credential_preview": {
         "@type": "issue-credential/1.0/credential-preview",
         "attributes": [

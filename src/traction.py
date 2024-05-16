@@ -98,6 +98,8 @@ def get_connection(conn_id):
 def send_drpc_response(conn_id, thread_id, response):
     endpoint = f"/drpc/{conn_id}/response"
     message = {"response": response, "thread_id": thread_id}
+    print(f"Sending response to {conn_id}, message = {message}")
+
     send_generic_message(conn_id, endpoint, message)
 
 

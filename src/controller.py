@@ -5,7 +5,6 @@ import random
 from flask import Flask, request, make_response
 from traction import (
     send_drpc_response,
-    send_drpc_request,
     offer_attestation_credential,
 )
 from apple import verify_attestation_statement
@@ -33,6 +32,7 @@ logger = logging.getLogger(__name__)
 def handle_drpc_request(drpc_request, connection_id):
     handler = {
         "request_nonce": handle_drpc_request_nonce,
+        "request_attestation": handle_drpc_request_challange,
     }.get(drpc_request["method"], handle_drpc_default)
 
     return handler(drpc_request, connection_id)
@@ -42,40 +42,47 @@ def handle_drpc_default(drpc_request, connection_id):
     return {
         "jsonrpc": "2.0",
         "error": {"code": -32601, "message": "method not found"},
-        "id": drpc_request["id"],
+        "id": drpc_request.get("id", random.randint(0, 1000000)),
     }
 
 
 def handle_drpc_request_nonce(drpc_request, connection_id):
+    print("handle_request_nonce")
+
     nonce = secrets.token_hex(16)
-    request_attestation = {
+    response = {
         "jsonrpc": "2.0",
-        "method": "request_attestation",
-        "params": {"nonce": nonce},
-        "id": random.randint(0, 1000000),
+        "result": {"nonce": nonce},
+        "id": drpc_request.get("id", random.randint(0, 1000000)),
     }
+
     # cache nonce with connection id as key, allow it to expire
     # after n seconds
     redis_instance.setex(connection_id, auto_expire_nonce, nonce)
 
-    send_drpc_request(connection_id, request_attestation)
-
-    return {}
+    return response
 
 
-def handle_drpc_challenge_response(drpc_response, connection_id):
+def handle_drpc_request_challange(drpc_request, connection_id):
     logger.info("handle_attestation_challenge")
-    attestation_resp = drpc_response.get("result")
-    if not attestation_resp:
-        report_failure(connection_id)
+
+    attestation_params = drpc_request.get("params")
+
+    if not attestation_params:
+        report_failure(connection_id)  # TODO(jl): to DRPC resposne
+
         return
-    attestation_object = attestation_resp.get("attestation_object")
-    platform = attestation_resp.get("platform")
-    app_version = attestation_resp.get("app_version")
-    os_version = attestation_resp.get("os_version")
+
+    attestation_object = attestation_params.get("attestation_object")
+    platform = attestation_params.get("platform")
+    app_version = attestation_params.get("app_version")
+    os_version = attestation_params.get("os_version")
+
     if None in [attestation_object, platform, app_version, os_version]:
-        report_failure(connection_id)
+        report_failure(connection_id)  # TODO(jl): to DRPC resposne
+
         return
+
     os_version_parts = os_version.split(" ")
     method = (
         AttestationMethod.AppleAppAttestation.value
@@ -89,6 +96,7 @@ def handle_drpc_challenge_response(drpc_response, connection_id):
     if not nonce:
         logger.info("No cached nonce")
         report_failure(connection_id)
+
         return
 
     message_templates_path = os.getenv("MESSAGE_TEMPLATES_PATH")
@@ -100,11 +108,13 @@ def handle_drpc_challenge_response(drpc_response, connection_id):
     def pred(cred_def):
         return did in cred_def
 
-    # find the cred def id that contains the current traction issuer did
+    # find the cred def id that contains the current
+    # traction issuer did
     cred_def_id = next(filter(pred, attestation_cred_def_ids), None)
     if cred_def_id is None:
         logger.info("No matching cred def id")
         report_failure(connection_id)
+
         return
 
     offer["cred_def_id"] = cred_def_id
@@ -121,7 +131,7 @@ def handle_drpc_challenge_response(drpc_response, connection_id):
 
     if platform == "apple":
         logger.info("testing apple challenge")
-        key_id = attestation_resp.get("key_id")
+        key_id = attestation_object.get("key_id")
         is_valid_challenge = verify_attestation_statement(
             attestation_object, key_id, nonce
         )
@@ -138,6 +148,14 @@ def handle_drpc_challenge_response(drpc_response, connection_id):
     else:
         logger.info("invalid challenge")
         report_failure(connection_id)
+
+    response = {
+        "jsonrpc": "2.0",
+        "result": {"status": "success"},
+        "id": drpc_request.get("id", random.randint(0, 1000000)),
+    }
+
+    return response
 
 
 def report_failure(connection_id):
@@ -161,6 +179,7 @@ def drpc_request():
     thread_id = message["thread_id"]
     req = message["request"]
     drpc_request = req["request"]
+
     drpc_response = handle_drpc_request(drpc_request, connection_id)
 
     send_drpc_response(connection_id, thread_id, drpc_response)
@@ -171,13 +190,7 @@ def drpc_request():
 @server.route("/topic/drpc_response/", methods=["POST"])
 def drpc_response():
     logger.info("Run POST /topic/drpc_response/")
-    message = request.get_json()
-    connection_id = message["connection_id"]
-    print(message)
-    req = message["response"]["request"]
-    if req["method"] == "request_attestation":
-        resp = message["response"]["response"]
-        handle_drpc_challenge_response(resp, connection_id)
+
     return make_response("", 204)
 
 
