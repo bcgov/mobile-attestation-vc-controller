@@ -42,7 +42,7 @@ error_codes = {
 def handle_drpc_request(drpc_request, connection_id):
     handler = {
         "request_nonce": handle_drpc_request_nonce,
-        "request_attestation": handle_drpc_request_challange,
+        "request_attestation": handle_drpc_request_attestation,
     }.get(drpc_request["method"], handle_drpc_default)
 
     return handler(drpc_request, connection_id)
@@ -78,8 +78,8 @@ def handle_drpc_request_nonce(drpc_request, connection_id):
     return response
 
 
-def handle_drpc_request_challange(drpc_request, connection_id):
-    logger.info("handle_drpc_request_challange")
+def handle_drpc_request_attestation(drpc_request, connection_id):
+    logger.info("handle_drpc_request_attestation")
 
     attestation_params = drpc_request.get("params")
 
