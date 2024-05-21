@@ -57,7 +57,7 @@ def handle_drpc_default(drpc_request, connection_id):
 
 
 def handle_drpc_request_nonce(drpc_request, connection_id):
-    print("handle_request_nonce")
+    logger.info("handle_drpc_request_nonce")
 
     try:
         nonce = secrets.token_hex(16)
@@ -79,7 +79,7 @@ def handle_drpc_request_nonce(drpc_request, connection_id):
 
 
 def handle_drpc_request_challange(drpc_request, connection_id):
-    logger.info("handle_attestation_challenge")
+    logger.info("handle_drpc_request_challange")
 
     attestation_params = drpc_request.get("params")
 
@@ -186,6 +186,7 @@ def ping():
 @server.route("/topic/drpc_request/", methods=["POST"])
 def drpc_request():
     logger.info("Run POST /topic/drpc_request/")
+
     message = request.get_json()
     connection_id = message["connection_id"]
     thread_id = message["thread_id"]
