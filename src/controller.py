@@ -28,6 +28,16 @@ server = Flask(__name__)
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+error_codes = {
+    32601: "method not found",
+    32602: "invalid params",
+    32603: "nonce not found",
+    32604: "cred def id not found",
+    32605: "unsupported platform",
+    32606: "invalid challenge",
+    32607: "unable to cache nonce",
+}
+
 
 def handle_drpc_request(drpc_request, connection_id):
     handler = {
@@ -49,16 +59,21 @@ def handle_drpc_default(drpc_request, connection_id):
 def handle_drpc_request_nonce(drpc_request, connection_id):
     print("handle_request_nonce")
 
-    nonce = secrets.token_hex(16)
+    try:
+        nonce = secrets.token_hex(16)
+
+        # cache nonce with connection id as key, allow it to expire
+        # after n seconds
+        redis_instance.setex(connection_id, auto_expire_nonce, nonce)
+    except Exception as e:
+        logger.info(f"Unable to cache nonce for connection id: {connection_id}, {e}")
+        return report_failure(drpc_request, 32607)
+
     response = {
         "jsonrpc": "2.0",
         "result": {"nonce": nonce},
         "id": drpc_request.get("id", random.randint(0, 1000000)),
     }
-
-    # cache nonce with connection id as key, allow it to expire
-    # after n seconds
-    redis_instance.setex(connection_id, auto_expire_nonce, nonce)
 
     return response
 
@@ -69,9 +84,7 @@ def handle_drpc_request_challange(drpc_request, connection_id):
     attestation_params = drpc_request.get("params")
 
     if not attestation_params:
-        report_failure(connection_id)  # TODO(jl): to DRPC resposne
-
-        return
+        return report_failure(drpc_request, 32602)
 
     attestation_object = attestation_params.get("attestation_object")
     platform = attestation_params.get("platform")
@@ -79,9 +92,7 @@ def handle_drpc_request_challange(drpc_request, connection_id):
     os_version = attestation_params.get("os_version")
 
     if None in [attestation_object, platform, app_version, os_version]:
-        report_failure(connection_id)  # TODO(jl): to DRPC resposne
-
-        return
+        return report_failure(drpc_request, 32602)
 
     os_version_parts = os_version.split(" ")
     method = (
@@ -95,9 +106,7 @@ def handle_drpc_request_challange(drpc_request, connection_id):
     nonce = redis_instance.get(connection_id)
     if not nonce:
         logger.info("No cached nonce")
-        report_failure(connection_id)
-
-        return
+        return report_failure(drpc_request, 32603)
 
     message_templates_path = os.getenv("MESSAGE_TEMPLATES_PATH")
     with open(os.path.join(message_templates_path, "offer.json"), "r") as f:
@@ -113,9 +122,7 @@ def handle_drpc_request_challange(drpc_request, connection_id):
     cred_def_id = next(filter(pred, attestation_cred_def_ids), None)
     if cred_def_id is None:
         logger.info("No matching cred def id")
-        report_failure(connection_id)
-
-        return
+        return report_failure(drpc_request, 32604)
 
     offer["cred_def_id"] = cred_def_id
     offer["connection_id"] = connection_id
@@ -140,14 +147,14 @@ def handle_drpc_request_challange(drpc_request, connection_id):
         is_valid_challenge = verify_integrity_token(attestation_object, nonce)
     else:
         logger.info("unsupported platform")
-        report_failure(connection_id)
+        return report_failure(drpc_request, 32605)
 
     if is_valid_challenge:
         logger.info("valid challenge")
         offer_attestation_credential(offer)
     else:
         logger.info("invalid challenge")
-        report_failure(connection_id)
+        return report_failure(drpc_request, 32606)
 
     response = {
         "jsonrpc": "2.0",
@@ -158,8 +165,13 @@ def handle_drpc_request_challange(drpc_request, connection_id):
     return response
 
 
-def report_failure(connection_id):
-    pass  # Will implement as DRPC once BC Wallet is capable of handling
+def report_failure(drpc_request, code):
+    return {
+        "jsonrpc": "2.0",
+        "result": {"status": "failure"},
+        "error": error_codes.get(code, "Unknown error"),
+        "id": drpc_request.get("id", random.randint(0, 1000000)),
+    }
 
 
 @server.route("/topic/ping/", methods=["POST", "GET"])
