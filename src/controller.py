@@ -71,7 +71,7 @@ def handle_drpc_request_nonce(drpc_request, connection_id):
 
     response = {
         "jsonrpc": "2.0",
-        "result": {"nonce": nonce},
+        "result": {"status": "success", "nonce": nonce},
         "id": drpc_request.get("id", random.randint(0, 1000000)),
     }
 
@@ -168,8 +168,7 @@ def handle_drpc_request_attestation(drpc_request, connection_id):
 def report_failure(drpc_request, code):
     return {
         "jsonrpc": "2.0",
-        "result": {"status": "failure"},
-        "error": error_codes.get(code, "Unknown error"),
+        "error": {"code": code, "message": f"{error_codes.get(code, 'Unknown error')}"},
         "id": drpc_request.get("id", random.randint(0, 1000000)),
     }
 
