@@ -74,5 +74,5 @@ spec:
             - name: REDIS_URI
               valueFrom:
                 secretKeyRef:
-                  name: redis-shared
+                  name: shared-redis-creds
                   key: connection-string

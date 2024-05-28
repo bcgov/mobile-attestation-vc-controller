@@ -5,7 +5,13 @@
 Deploy to the selected namespae. Some commands assume you're already in the given namespace. Adjust the name your cluster by replacing `shared` appropriatly.
 
 ```console
-helm template shared devops/charts/redis -f devops/charts/redis/values.yaml --set-string password=$(openssl rand -hex 16) --set-string username=$(openssl rand -hex 16) --set-string namespace=$NAMESPACE | oc apply -n $NAMESPACE -f -
+export REDIS_USER=$(openssl rand -hex 16)
+export REDIS_PWD=$(openssl rand -hex 16)
+export NAMESPACE=$(oc project --short)
+```
+
+```console
+helm template shared devops/charts/redis -f devops/charts/redis/values.yaml --set-string password=$REDIS_PWD --set-string username=$REDIS_USER --set-string namespace=$NAMESPACE | oc apply -n $NAMESPACE -f -
 ```
 
 You should see the following output:
