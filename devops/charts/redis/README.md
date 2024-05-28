@@ -6,20 +6,20 @@ Deploy to the selected namespae. Some commands assume you're already in the give
 
 ```console
 export REDIS_USER=$(openssl rand -hex 16)
-export REDIS_PWD=$(openssl rand -hex 16)
+export REDIS_PASSWD=$(openssl rand -hex 16)
 export NAMESPACE=$(oc project --short)
 ```
 
 ```console
-export REDIS_USER=$(oc get secret -n $(oc project --short) shared-redis-creds -o jsonpath='{.data.username}' | base64 -d)
-export REDIS_PWD=$(oc get secret -n $(oc project --short) shared-redis-creds -o jsonpath='{.data.password}' | base64 -d)
 export NAMESPACE=$(oc project --short)
+export REDIS_USER=$(oc get secret -n $NAMESPACE shared-redis-creds -o jsonpath='{.data.username}' | base64 -d)
+export REDIS_PASSWD=$(oc get secret -n $NAMESPACE shared-redis-creds -o jsonpath='{.data.password}' | base64 -d)
 ```
 
 
 
 ```console
-helm template shared devops/charts/redis -f devops/charts/redis/values.yaml --set-string password=$REDIS_PWD --set-string username=$REDIS_USER --set-string namespace=$NAMESPACE | oc apply -n $NAMESPACE -f -
+helm template shared devops/charts/redis -f devops/charts/redis/values.yaml --set-string password=$REDIS_PASSWD --set-string username=$REDIS_USER --set-string namespace=$NAMESPACE | oc apply -n $NAMESPACE -f -
 ```
 
 You should see the following output:
@@ -77,7 +77,7 @@ Each master has one replica.
 The paremeter `--cluster-replicas 1` is the number of replicas for each master node. Adjust the name your cluster by replacing `shared` appropriatly.
 
 ```console
-oc exec -n $(oc project --short) -it shared-redis-0 -- redis-cli --user $(oc get secret -n $(oc project --short) shared-redis-creds -o jsonpath='{.data.username}' | base64 -d) -a $(oc get secret -n $(oc project --short) shared-redis-creds -o jsonpath='{.data.password}' | base64 -d) --cluster create --cluster-replicas 1 $(oc get pods -n $(oc project --short) -l "app.kubernetes.io/component=redis" -o jsonpath='{range.items[*]}{.status.podIP}:6379 {end}')
+oc exec -n $NAMESPACE -it shared-redis-0 -- redis-cli --user $REDIS_USER -a REDIS_PASSWD --cluster create --cluster-replicas 1 $(oc get pods -n $NAMESPACE -l "app.kubernetes.io/component=redis" -o jsonpath='{range.items[*]}{.status.podIP}:6379 {end}')
 ```
 
 You should see the following output:
@@ -141,7 +141,7 @@ Check the status of the current cluster. This will show the number of nodes and 
 Check you have the expected number of nodes as described in values.yaml `replicas`.
 
 ```console
-oc exec -n $(oc project --short) -i shared-redis-0 -- redis-cli -c CLUSTER NODES
+oc exec -n $(oc project --short) -i shared-redis-0 -- redis-cli --user $REDIS_USER -c CLUSTER NODES
 ```
 
 You should see output similar to the following:
