@@ -1,0 +1,26 @@
+---
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: {{include "redis.fullname" .}}-cluster
+  labels: {{- include "redis.labels" . | nindent 4}}
+  annotations: {{- toYaml .Values.route.annotations | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/component: redis
+      {{- include "redis.selectorLabels" . | nindent 6 }}
+  ingress:
+    - ports:
+      - protocol: TCP
+        port: 16379
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/component: redis
+              {{- include "redis.selectorLabels" . | nindent 14 }}
+          namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ .Values.namespace }}
+  policyTypes:
+    - Ingress
