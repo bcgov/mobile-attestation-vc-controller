@@ -13,7 +13,11 @@ spec:
   ingress:
     - ports:
       - protocol: TCP
-        port: 16379
+        {{- range $name, $port := .Values.service }}
+        {{- if eq .name "gossip" }}
+        port: {{ .port }}
+        {{- end }}
+        {{- end }}
     - from:
         - podSelector:
             matchLabels:
