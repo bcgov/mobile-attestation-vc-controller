@@ -77,7 +77,7 @@ Each master has one replica.
 The paremeter `--cluster-replicas 1` is the number of replicas for each master node. Adjust the name your cluster by replacing `shared` appropriatly.
 
 ```console
-oc exec -n $NAMESPACE -it shared-redis-0 -- redis-cli --user $REDIS_USER -a REDIS_PASSWD --cluster create --cluster-replicas 1 $(oc get pods -n $NAMESPACE -l "app.kubernetes.io/component=redis" -o jsonpath='{range.items[*]}{.status.podIP}:6379 {end}')
+oc exec -n $NAMESPACE -it shared-redis-0 -- redis-cli --user $REDIS_USER -a $REDIS_PASSWD --cluster create --cluster-replicas 1 $(oc get pods -n $NAMESPACE -l "app.kubernetes.io/component=redis" -o jsonpath='{range.items[*]}{.status.podIP}:6379 {end}')
 ```
 
 You should see the following output:
