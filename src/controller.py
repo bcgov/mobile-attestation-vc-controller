@@ -125,6 +125,7 @@ def handle_drpc_request_attestation_v1(drpc_response, connection_id):
     platform = result.get("platform")
     app_version = result.get("app_version")
     os_version = result.get("os_version")
+    key_id = result.get("key_id", None)
 
     # fetch nonce from cache using connection id as key
     nonce = redis_instance.get(connection_id)
@@ -133,13 +134,23 @@ def handle_drpc_request_attestation_v1(drpc_response, connection_id):
 
     if None in [attestation_object, nonce, platform, app_version, os_version]:
         logger.info("Attestation paremeters missing")
+        # TODO(jl): Fail gracefully
+
+    if platform == "apple" and key_id is None:
+        logger.info("Key id missing for apple attestation")
+        # TODO(jl): Fail gracefully
 
     try:
         return validate_and_offer(
-            attestation_object, nonce, platform, app_version, os_version, connection_id
+            (attestation_object, key_id),
+            nonce,
+            platform,
+            app_version,
+            os_version,
+            connection_id,
         )
     except Exception as e:
-        logger.info(f"Error processing attestation: {e}")
+        logger.info(f"Error processing attestation {str(e)}")
 
 
 def handle_drpc_request_attestation_v2(drpc_request, connection_id):
@@ -156,6 +167,7 @@ def handle_drpc_request_attestation_v2(drpc_request, connection_id):
     app_version = attestation_params.get("app_version")
     os_version = attestation_params.get("os_version")
     drpc_request_id = drpc_request.get("id", random.randint(0, 1000000))
+    key_id = drpc_request.get("key_id", None)
 
     # fetch nonce from cache using connection id as key
     nonce = redis_instance.get(connection_id)
@@ -164,11 +176,21 @@ def handle_drpc_request_attestation_v2(drpc_request, connection_id):
         return report_failure(drpc_request_id, 32603)
 
     if None in [attestation_object, nonce, platform, app_version, os_version]:
+        logger.info("Attestation paremeters missing")
+        return report_failure(drpc_request_id, 32602)
+
+    if platform == "apple" and key_id is None:
+        logger.info("Key id missing for apple attestation")
         return report_failure(drpc_request_id, 32602)
 
     try:
         rv = validate_and_offer(
-            attestation_object, nonce, platform, app_version, os_version, connection_id
+            (attestation_object, key_id),
+            nonce,
+            platform,
+            app_version,
+            os_version,
+            connection_id,
         )
 
         if rv is not None:
@@ -189,8 +211,9 @@ def handle_drpc_request_attestation_v2(drpc_request, connection_id):
 
 # TODO(jl): Break into seporate validate and offer functions.
 def validate_and_offer(
-    attestation_object, nonce, platform, app_version, os_version, connection_id
+    attestation_data, nonce, platform, app_version, os_version, connection_id
 ):
+    attestation_object, key_id = attestation_data
     os_version_parts = os_version.split(" ")
     method = (
         AttestationMethod.AppleAppAttestation.value
@@ -229,7 +252,6 @@ def validate_and_offer(
 
     if platform == "apple":
         logger.info("testing apple challenge")
-        key_id = attestation_object.get("key_id")
         is_valid_challenge = verify_attestation_statement(
             attestation_object, key_id, nonce
         )
