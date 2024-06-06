@@ -1,5 +1,3 @@
-
-
 ### Deploy
 
 Deploy to the selected namespae. Some commands assume you're already in the given namespace. Adjust the name your cluster by replacing `shared` appropriatly.
@@ -16,10 +14,8 @@ export REDIS_USER=$(oc get secret -n $NAMESPACE shared-redis-creds -o jsonpath='
 export REDIS_PASSWD=$(oc get secret -n $NAMESPACE shared-redis-creds -o jsonpath='{.data.password}' | base64 -d)
 ```
 
-
-
 ```console
-helm template shared devops/charts/redis -f devops/charts/redis/values.yaml --set-string password=$REDIS_PASSWD --set-string username=$REDIS_USER --set-string namespace=$NAMESPACE | oc apply -n $NAMESPACE -f -
+helm install shared devops/charts/redis -f devops/charts/redis/values.yaml --set-string password=$REDIS_PASSWD --set-string username=$REDIS_USER --set-string namespace=$NAMESPACE
 ```
 
 You should see the following output:
@@ -52,14 +48,13 @@ shared-redis-5   1/1     Running   0          112s
 
 If you are re-deploying or updating the cluster, you will want to keep the same password and username.
 
-
 ### Create a Cluster
 
-This only needs to be done one time following the initial deployment of the redis cluster. Adjust the name your cluster by replacing `shared` appropriatly.
+This only needs to be done one time following the initial deployment of the redis cluster. Adjust the name your cluster by replacing `shared` appropriately.
 
 The number of nodes and the distribution of master and replica nodes in a Redis cluster depend on various factors such as the desired level of availability, redundancy, and performance requirements. Here are some guidelines to help you decide:
 
-**Basic Configuration:***
+**Basic Configuration:\***
 Minimum Nodes: A Redis cluster requires at least 6 nodes to ensure high availability with automatic failover.
 3 Master Nodes: Each master node will handle a subset of the data (hash slots).
 3 Replica Nodes: Each master node will have one replica for redundancy.
@@ -137,7 +132,6 @@ M: f7aed2b23c011533806280692870eacbca23391d 10.97.181.42:6379
 
 Check the status of the current cluster. This will show the number of nodes and the number of replicas. The parameter `-i` is any node in the cluster. Adjust the name your cluster by replacing `shared` appropriatly.
 
-
 Check you have the expected number of nodes as described in values.yaml `replicas`.
 
 ```console
@@ -154,8 +148,6 @@ You should see output similar to the following:
 5b24aca2206372f42a372f1c55a6957cd8591f34 10.97.179.175:6379@16379 myself,master - 0 1716930291000 1 connected 0-5460
 f7aed2b23c011533806280692870eacbca23391d 10.97.181.42:6379@16379 master - 0 1716930292000 2 connected 5461-10922
 ```
-
-
 
 Confirm the cluster is healthy.
 

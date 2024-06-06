@@ -21,6 +21,13 @@ image:
   # Overrides the image tag whose default is the chart appVersion.
   tag: "364578c"
 
+netpol:
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: bc0192-prod
+
 env:
   TRACTION_BASE_URL: "https://traction-tenant-proxy-prod.apps.silver.devops.gov.bc.ca"
   APPLE_ATTESTATION_ROOT_CA_URL: "https://www.apple.com/certificateauthority/Apple_App_Attestation_Root_CA.pem"

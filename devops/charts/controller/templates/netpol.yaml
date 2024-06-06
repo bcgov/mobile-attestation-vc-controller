@@ -9,10 +9,7 @@ spec:
   podSelector:
     matchLabels: {{- include "attestation-controller.selectorLabels" . | nindent 6}}
   ingress:
-    - from:
-        - namespaceSelector:
-            matchLabels:
-              network.openshift.io/policy-group: ingress
+    {{- .Values.netpol.ingress | toYaml | nindent 4 }}
   policyTypes:
     - Ingress
 ---
