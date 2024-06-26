@@ -27,7 +27,7 @@ auto_expire_nonce = 60 * 10  # 10 minutes
 
 # Attestation cred def IDs
 attestation_cred_def_ids = [
-    "NXp6XcGeCR2MviWuY51Dva:3:CL:33557:bcwallet",
-    "RycQpZ9b4NaXuT5ZGjXkUE:3:CL:120:bcwallet",
+    "NXp6XcGeCR2MviWuY51Dva:3:CL:33557:bcwallet_dev_v2",
+    "RycQpZ9b4NaXuT5ZGjXkUE:3:CL:120:bcwallet_test_v2",
     "XqaRXJt4sXE6TRpfGpVbGw:3:CL:655:bcwallet",
 ]
