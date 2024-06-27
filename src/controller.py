@@ -166,8 +166,8 @@ def handle_drpc_request_attestation_v2(drpc_request, connection_id):
     platform = attestation_params.get("platform")
     app_version = attestation_params.get("app_version")
     os_version = attestation_params.get("os_version")
+    key_id = attestation_params.get("key_id", None)
     drpc_request_id = drpc_request.get("id", random.randint(0, 1000000))
-    key_id = drpc_request.get("key_id", None)
 
     # fetch nonce from cache using connection id as key
     nonce = redis_instance.get(connection_id)
