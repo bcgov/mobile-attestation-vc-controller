@@ -1,13 +1,15 @@
-# TL;DR
+# Mobile Attestation VC Controller
 
-This is a Proof of Concept (PoC) of a ACA-py controller for mobile application attestation. It has the following features:
+This is a Proof of Concept (PoC) of an ACA-py controller for mobile application attestation. It verifies that requests come from legitimate mobile apps running on genuine devices.
+
+## Features
 
 - [x] Apple App Attestation
 - [x] Android Play Integrity API
 - [ ] Apple Fraud Detection API
 - [ ] AppStore Receipt Checking (iOS <14.0)
 
-# Development
+# Getting Started
 
 While this controller can be run as a controller for any ACA-py instance, it was developed using "Traction" as the front end. Any documentation or references should be considered in that context.
 
@@ -29,73 +31,23 @@ When run, this program will act as a "controller" to an ACA-py agent. It uses Fl
 
 ### Local Development
 
-<!-- 
- redis-cli --cluster create redis-1:6379 redis-2:6379 redis-3:6379 --cluster-replicas 0 
- 
- 
- 
- /data # redis-cli --cluster create redis-1:6379 redis-2:6379 redis-3:6379 --cluster-replicas 0
->>> Performing hash slots allocation on 3 nodes...
-Master[0] -> Slots 0 - 5460
-Master[1] -> Slots 5461 - 10922
-Master[2] -> Slots 10923 - 16383
-M: db572c8cca958fe96b27f7676db60d633ebb723b redis-1:6379
-   slots:[0-5460] (5461 slots) master
-M: a2bfe0d0508d54090296045d1a10f67bfec81f55 redis-2:6379
-   slots:[5461-10922] (5462 slots) master
-M: 3b4d9783e79bfd1e75661ae57c701da5a5042ec0 redis-3:6379
-   slots:[10923-16383] (5461 slots) master
-Can I set the above configuration? (type 'yes' to accept): yes
->>> Nodes configuration updated
->>> Assign a different config epoch to each node
->>> Sending CLUSTER MEET messages to join the cluster
-Waiting for the cluster to join
+Follow these steps to get the controller running locally:
 
->>> Performing Cluster Check (using node redis-1:6379)
-M: db572c8cca958fe96b27f7676db60d633ebb723b redis-1:6379
-   slots:[0-5460] (5461 slots) master
-M: 3b4d9783e79bfd1e75661ae57c701da5a5042ec0 172.21.0.4:6379
-   slots:[10923-16383] (5461 slots) master
-M: a2bfe0d0508d54090296045d1a10f67bfec81f55 172.21.0.3:6379
-   slots:[5461-10922] (5462 slots) master
-[OK] All nodes agree about slots configuration.
->>> Check for open slots...
->>> Check slots coverage...
-[OK] All 16384 slots covered.
+**Step 1:** Create a `.env` file in the root of your project by copying `env.sample` to `.env`, then fill in your own values.
 
+> **Note:** For Android Attestation, you'll also need a Google OAuth JSON key file in `/src` configured for your app.
 
-/data # redis-cli cluster info
-cluster_state:ok
-cluster_slots_assigned:16384
-cluster_slots_ok:16384
-cluster_slots_pfail:0
-cluster_slots_fail:0
-cluster_known_nodes:3
-cluster_size:3
-cluster_current_epoch:3
-cluster_my_epoch:1
-cluster_stats_messages_ping_sent:12
-cluster_stats_messages_pong_sent:16
-cluster_stats_messages_sent:28
-cluster_stats_messages_ping_received:14
-cluster_stats_messages_pong_received:12
-cluster_stats_messages_meet_received:2
-cluster_stats_messages_received:28
-total_cluster_links_buffer_limit_exceeded:0
+**Step 2:** Create a schema and credential definition ID in your Traction instance, then add it to `fixtures/offer.json` following the existing format.
 
- -->
+**Step 3:** Start the dev container. This repo includes a `.devcontainer` configuration to help you get up and running quickly. Open the project in VS Code and use the "Reopen in Container" command.
 
-First, create a `.env` file in the root of your folder by copying `env.sample` to `.env`, populate the values with your own. For Android Attestation you will need a Google OAuth JSON key in `/src` configured for your app.
-
-You will also need to create a schema and credential definition id in your Traction instance and then add it to `fixtures/offer.json`, following the format.
-
-For simplicity, this repo comes with a `.devContainer` to allow developers to get up-and-running quickly. Use VSCode to restart or start the container. Once the container is running, you'll need to assign redis clusters with the following command run from redis-1 (can be accessed from Docker desktop):
+**Step 4:** Once the container is running, initialize the Redis cluster. You can access the `redis-1` container via Docker Desktop and run:
 
 ```bash
 redis-cli --cluster create redis-1:6379 redis-2:6379 redis-3:6379 --cluster-replicas 0
 ```
 
-then you can start the controller with the following command:
+**Step 5:** Start the controller:
 
 ```bash
 python src/controller.py
@@ -115,100 +67,113 @@ Press CTRL+C to quit
  * Debugger PIN: 107-923-082
 ```
 
-Flask will expose port `5000` and this is where you need to point whatever tool you have setup to expose localhost, for example, in the case of `ngrok`:
+**Step 6:** Expose the local server to the internet. Flask runs on port `5000`, and you'll need to make it publicly accessible. For example, using ngrok:
 
 ```bash
 npx ngrok http 5000
 ```
 
-Finally, whatever public endpoint is provided from, in this case `ngrok` needs to be provided to Traction as the controller endpoint. This can be done by going to Settings -> Tenant Profile and entering the URL in the `WebHook URL` field.
+**Step 7:** Configure Traction to use your public URL. Copy the public endpoint from ngrok (or your chosen tunneling tool) and add it to Traction by going to **Settings → Tenant Profile** and entering the URL in the **WebHook URL** field.
 
 ### OpenShift Cluster
 
-The general command to deploy this to an OpenShift cluster is:
+For deploying to OpenShift, this project includes two Helm charts:
+
+1. **[Redis Chart](devops/charts/redis/README.md)** - Deploy the Redis cluster first
+2. **[Controller Chart](devops/charts/controller/README.md)** - Deploy the attestation controller
+
+Each chart's README contains detailed instructions for installation, upgrade, and configuration.
+
+#### Quick Start
 
 ```bash
-helm template <RELEASE> ./devops/charts/controller
--f ./devops/charts/controller/values_<ENVIRONMENT>.yaml
---set-string tenant_id=<TENANT_ID> \
---set-string tenant_api_key=<TENANT_API_KEY> \
---set-string traction_legacy_did=<TRACTION_LEGACY_DID> \
---set-file google_oauth_key.json=<PATH_TO_GOOGLE_OAUTH_KEY>| \
-oc apply -n <NAMESPACE> -f -
+# Set your namespace
+export NAMESPACE=$(oc project --short)
+
+# Deploy the controller
+helm install bcwallet-attestation-controller devops/charts/controller \
+  -f ./devops/charts/controller/values_dev.yaml \
+  --set-string tenant_id=$TRACTION_TENANT_ID \
+  --set-string tenant_api_key=$TRACTION_TENANT_API_KEY \
+  --set-string traction_legacy_did=$TRACTION_LEGACY_DID \
+  --set-string namespace=$NAMESPACE \
+  --set-file google_oauth_key.json=google_oauth_key.json
 ```
 
-And example command to deploy to the `e79518-dev` namespace is:
+See the [Controller Chart README](devops/charts/controller/README.md) for complete setup instructions, including how to retrieve credentials from an existing deployment.
 
-```bash
-helm template bcwallet ./devops/charts/controller
--f ./devops/charts/controller/values_dev.yaml
---set-string tenant_id="$TRACTION_TENANT_ID"
---set-string tenant_api_key="$TRACTION_TENANT_API_KEY"
---set-string traction_legacy_did="$TRACTION_LEGACY_DID"
---set-file google_oauth_key.json=./google_oauth_key.json|
-oc apply -n e79518-dev -f -
-```
+---
 
-The release name can be anything you want, but it must be unique to the namespace. When deploying to a shared namespace like `e79518-dev`, it is recommended use the a meaningful release name that will help reason about what the controller is doing.
+# Reference
 
-If you are deploying to a namespace that **already has a controller**, you can set your environment variables with the following helpful commands:
+## Android Device Integrity
 
-```console
-export TRACTION_TENANT_API_KEY=$(oc get secret/bcwallet-attestation-controller-traction-creds -o json| jq -r ".data.TRACTION_TENANT_API_KEY"|base64 -d) && \ 
-echo $TRACTION_TENANT_API_KEY
-```
-
-```console
-export TRACTION_TENANT_ID=$(oc get secret/bcwallet-attestation-controller-traction-creds -o json| jq -r ".data.TRACTION_TENANT_ID"|base64 -d) && \ 
-echo $TRACTION_TENANT_ID
-```
-
-```console
-export TRACTION_LEGACY_DID=$(oc get secret/bcwallet-attestation-controller-traction-creds -o json| jq -r ".data.TRACTION_LEGACY_DID"|base64 -d) && \ 
-echo $TRACTION_LEGACY_DID
-```
-
-## Notes Below Here
-
-https://developer.android.com/google/play/integrity/verdicts#device-integrity-field. You can then distinguish between MEETS_BASIC_INTEGRITY and MEETS_STRONG_INTEGRITY
+For more details on Android device integrity verdicts, see the [Play Integrity API documentation](https://developer.android.com/google/play/integrity/verdicts#device-integrity-field). This helps you distinguish between `MEETS_BASIC_INTEGRITY` and `MEETS_STRONG_INTEGRITY`.
 
 ## Useful Packages
 
-Here are some interesting packages that may be useful:
+These packages may be helpful when integrating attestation into your mobile app:
 
-https://github.com/invertase/react-native-firebase/tree/main#readme
-https://www.npmjs.com/package/@react-native-firebase/app-check
-`npm i -S @react-native-firebase/app-check`
+### React Native Firebase App Check
 
-https://github.com/kedros-as/react-native-google-play-integrity
-https://www.npmjs.com/package/react-native-google-play-integrity
-`npm i -S react-native-google-play-integrity`
+- [GitHub](https://github.com/invertase/react-native-firebase/tree/main#readme)
+- [npm](https://www.npmjs.com/package/@react-native-firebase/app-check)
 
-https://github.com/bpofficial/expo-attestation#readme
-https://www.npmjs.com/package/expo-attestation
-`npm i -S expo-attestation`
+```bash
+npm install @react-native-firebase/app-check
+```
+
+### React Native Google Play Integrity
+
+- [GitHub](https://github.com/kedros-as/react-native-google-play-integrity)
+- [npm](https://www.npmjs.com/package/react-native-google-play-integrity)
+
+```bash
+npm install react-native-google-play-integrity
+```
+
+### Expo Attestation
+
+- [GitHub](https://github.com/bpofficial/expo-attestation#readme)
+- [npm](https://www.npmjs.com/package/expo-attestation)
+
+```bash
+npm install expo-attestation
+```
 
 ## Handy Test Commands
+
+These commands are useful for testing the controller locally:
+
+**Create a basic message with encoded content:**
 
 ```bash
 jq --arg content "$(cat fixtures/request_issuance.json | base64)" --arg name "jason" '.content |= $content | .name |= $name' fixtures/basic_message.json
 ```
 
+**Send a test request to the controller:**
+
 ```bash
-jq --arg content "$(cat fixtures/request_issuance.json | base64)" '.content |= $content' fixtures/basic_message.json|curl -v -X POST -H "Content-Type: application/json" -d @- http://localhost:5000/topic/basicmessages/
+jq --arg content "$(cat fixtures/request_issuance.json | base64)" '.content |= $content' fixtures/basic_message.json | curl -v -X POST -H "Content-Type: application/json" -d @- http://localhost:5000/topic/basicmessages/
 ```
+
+**Merge two JSON files:**
 
 ```bash
 jq -s '.[0] * .[1]' source.json target.json
 ```
 
+**Send a challenge response:**
+
 ```bash
-jq --arg content "$(jq -s '.[0] * .[1]' fixtures/chalange_response.json attestation.json | base64)" '.content |= $content' fixtures/basic_message.json| curl -v -X POST -H "Content-Type: application/json" -d @- http://localhost:5000/topic/basicmessages/
+jq --arg content "$(jq -s '.[0] * .[1]' fixtures/chalange_response.json attestation.json | base64)" '.content |= $content' fixtures/basic_message.json | curl -v -X POST -H "Content-Type: application/json" -d @- http://localhost:5000/topic/basicmessages/
 ```
 
-## Apple Verifications Steps
+## Apple Verification Steps
 
-- [x] Use the decoded object, along with the key identifier that your app sends, to perform the following steps:
+The controller performs the following verification steps for Apple App Attestation (all currently implemented):
+
+- [x] Use the decoded object, along with the key identifier that your app sends, to perform the following steps
 
 - [x] Verify that the x5c array contains the intermediate and leaf certificates for App Attest, starting from the credential certificate in the first data buffer in the array (credcert). Verify the validity of the certificates using Apple’s App Attest root certificate.
 
@@ -231,6 +196,8 @@ jq --arg content "$(jq -s '.[0] * .[1]' fixtures/chalange_response.json attestat
 After successfully completing these steps, you can trust the attestation object.
 
 ## Android Verification Steps
+
+The controller performs the following verification steps for Android Play Integrity (all currently implemented):
 
 - [x] Get Integrity Verdict from Google's server via their python client
 - [x] Verify the package info matches our app
