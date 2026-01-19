@@ -23,7 +23,7 @@ spec:
   podSelector:
     matchLabels:
       app.kubernetes.io/component: redis
-      app.kubernetes.io/instance: shared
+      app.kubernetes.io/instance: shared-redis
       app.kubernetes.io/name: redis
   ingress:
     - ports:
