@@ -75,6 +75,27 @@ npx ngrok http 5000
 
 **Step 7:** Configure Traction to use your public URL. Copy the public endpoint from ngrok (or your chosen tunneling tool) and add it to Traction by going to **Settings → Tenant Profile** and entering the URL in the **WebHook URL** field.
 
+### Testing & Linting
+
+Install the development dependencies, then run the linter, formatter, and tests:
+
+```bash
+pip install -r requirements-dev.txt
+
+ruff check src scripts tests       # lint
+ruff format --check src scripts tests  # formatting check (drop --check to apply)
+pytest                             # unit tests
+```
+
+Dependencies are managed with [pip-tools](https://github.com/jazzband/pip-tools).
+Edit `requirements.in` / `requirements-dev.in` (the top-level deps), then
+regenerate the pinned, hashed lockfiles:
+
+```bash
+pip-compile --generate-hashes requirements.in
+pip-compile --generate-hashes --allow-unsafe requirements-dev.in
+```
+
 ### OpenShift Cluster
 
 For deploying to OpenShift, this project includes two Helm charts:

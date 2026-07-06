@@ -71,6 +71,10 @@ spec:
               value:  {{.Values.env.MESSAGE_TEMPLATES_PATH | quote}}
             - name: ALLOW_TEST_BUILDS
               value:  {{.Values.env.ALLOW_TEST_BUILDS | quote}}
+            - name: ALLOWED_APPLE_APP_IDS
+              value:  {{.Values.env.ALLOWED_APPLE_APP_IDS | quote}}
+            - name: ALLOWED_GOOGLE_PACKAGE_NAMES
+              value:  {{.Values.env.ALLOWED_GOOGLE_PACKAGE_NAMES | quote}}
             - name: REDIS_URI
               valueFrom:
                 secretKeyRef:

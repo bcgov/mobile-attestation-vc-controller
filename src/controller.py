@@ -1,26 +1,27 @@
 import json
-import secrets
 import logging
-import random
-from flask import Flask, request, make_response
-from traction import (
-    send_drpc_response,
-    send_drpc_request,
-    offer_attestation_credential,
-)
-from apple import verify_attestation_statement
-from goog import verify_integrity_token
 import os
-from dotenv import load_dotenv
-from redis_config import redis_instance
-from constants import (
-    auto_expire_nonce,
-    app_id,
-    app_vendor,
-    AttestationMethod,
-    attestation_cred_def_ids,
-)
+import random
+import secrets
 from datetime import datetime
+
+from dotenv import load_dotenv
+from flask import Flask, make_response, request
+
+from apple import verify_attestation_statement
+from constants import (
+    AttestationMethod,
+    app_vendor,
+    attestation_cred_def_ids,
+    auto_expire_nonce,
+)
+from goog import verify_integrity_token
+from redis_config import redis_instance
+from traction import (
+    offer_attestation_credential,
+    send_drpc_request,
+    send_drpc_response,
+)
 
 if os.getenv("FLASK_ENV") == "development":
     load_dotenv()
@@ -28,6 +29,10 @@ if os.getenv("FLASK_ENV") == "development":
 server = Flask(__name__)
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# Agents/mediators poll /topic/ping/ constantly; log only the first ping per
+# method so the signal isn't drowned out in the logs.
+_ping_logged = {"GET": False, "POST": False}
 
 error_codes = {
     32601: "method not found",
@@ -119,7 +124,8 @@ def handle_drpc_request_attestation_v1(drpc_response, connection_id):
 
     result = drpc_response.get("response").get("result")
     if not result:
-        logger.info("Unable to get result from drpc response")
+        logger.warning("Unable to get result from drpc response, aborting")
+        return
 
     attestation_object = result.get("attestation_object")
     platform = result.get("platform")
@@ -130,15 +136,16 @@ def handle_drpc_request_attestation_v1(drpc_response, connection_id):
     # fetch nonce from cache using connection id as key
     nonce = redis_instance.get(connection_id)
     if not nonce:
-        logger.info("No cached nonce")
+        logger.warning(f"No cached nonce for connection {connection_id}, aborting")
+        return
 
     if None in [attestation_object, nonce, platform, app_version, os_version]:
-        logger.info("Attestation paremeters missing")
-        # TODO(jl): Fail gracefully
+        logger.warning("Attestation parameters missing, aborting")
+        return
 
     if platform == "apple" and key_id is None:
-        logger.info("Key id missing for apple attestation")
-        # TODO(jl): Fail gracefully
+        logger.warning("Key id missing for apple attestation, aborting")
+        return
 
     try:
         return validate_and_offer(
@@ -210,9 +217,7 @@ def handle_drpc_request_attestation_v2(drpc_request, connection_id):
 
 
 # TODO(jl): Break into seporate validate and offer functions.
-def validate_and_offer(
-    attestation_data, nonce, platform, app_version, os_version, connection_id
-):
+def validate_and_offer(attestation_data, nonce, platform, app_version, os_version, connection_id):
     attestation_object, key_id = attestation_data
     os_version_parts = os_version.split(" ")
     method = (
@@ -220,7 +225,6 @@ def validate_and_offer(
         if platform == "apple"
         else AttestationMethod.GooglePlayIntegrity.value
     )
-    is_valid_challenge = False
 
     message_templates_path = os.getenv("MESSAGE_TEMPLATES_PATH")
     with open(os.path.join(message_templates_path, "offer.json"), "r") as f:
@@ -238,36 +242,38 @@ def validate_and_offer(
         logger.info("No matching cred def id")
         return 32604
 
-    offer["cred_def_id"] = cred_def_id
+    offer["filter"]["anoncreds"]["cred_def_id"] = cred_def_id
     offer["connection_id"] = connection_id
-    offer["credential_preview"]["attributes"] = [
-        {"name": "operating_system", "value": os_version_parts[0]},
-        {"name": "operating_system_version", "value": os_version_parts[1]},
-        {"name": "validation_method", "value": method},
-        {"name": "app_id", "value": ".".join(app_id.split(".")[1:])},
-        {"name": "app_vendor", "value": app_vendor},
-        {"name": "issue_date_dateint", "value": datetime.now().strftime("%Y%m%d")},
-        {"name": "app_version", "value": app_version},
-    ]
 
+    # The verifiers return the actual attesting bundle on success (None on
+    # failure), so the issued cred reflects the real bundle, not a constant.
     if platform == "apple":
         logger.info("testing apple challenge")
-        is_valid_challenge = verify_attestation_statement(
-            attestation_object, key_id, nonce
-        )
+        matched_app_id = verify_attestation_statement(attestation_object, key_id, nonce)
+        # strip the Apple Team ID prefix to get the bundle id
+        attestation_app_id = ".".join(matched_app_id.split(".")[1:]) if matched_app_id else None
     elif platform == "google":
         logger.info("testing google challenge")
-        is_valid_challenge = verify_integrity_token(attestation_object, nonce)
+        attestation_app_id = verify_integrity_token(attestation_object, nonce)
     else:
         logger.info("unsupported platform")
         return 32605
 
-    if is_valid_challenge:
-        logger.info("valid challenge")
-        offer_attestation_credential(offer)
-    else:
+    if not attestation_app_id:
         logger.info("invalid challenge")
         return 32606
+
+    logger.info("valid challenge")
+    offer["credential_preview"]["attributes"] = [
+        {"name": "operating_system", "value": os_version_parts[0]},
+        {"name": "operating_system_version", "value": os_version_parts[1]},
+        {"name": "validation_method", "value": method},
+        {"name": "app_id", "value": attestation_app_id},
+        {"name": "app_vendor", "value": app_vendor},
+        {"name": "issue_date_dateint", "value": datetime.now().strftime("%Y%m%d")},
+        {"name": "app_version", "value": app_version},
+    ]
+    offer_attestation_credential(offer)
 
     return None
 
@@ -282,21 +288,20 @@ def report_failure(drpc_request_id, code):
 
 @server.route("/topic/ping/", methods=["POST", "GET"])
 def ping():
-    if request.method == "POST":
-        logger.info("Run POST /ping/")
-    elif request.method == "GET":
-        logger.info("Run GET /ping/")
+    if not _ping_logged.get(request.method, True):
+        logger.info(f"Run {request.method} /ping/ (further pings suppressed)")
+        _ping_logged[request.method] = True
     return make_response("", 204)
 
 
-@server.route("/topic/issue_credential/", methods=["POST"])
+@server.route("/topic/issue_credential_v2_0/", methods=["POST"])
 def issue_credential():
-    logger.info("Run POST /topic/issue_credential")
+    logger.info("Run POST /topic/issue_credential_v2_0")
 
     connection_id = request.get_json().get("connection_id")
     state = request.get_json().get("state")
 
-    print(f"Credential for connection id {connection_id}, sate {state}"),
+    logger.info(f"Credential for connection id {connection_id}, state {state}")
 
     return make_response("", 204)
 

@@ -14,7 +14,7 @@
   "workspaceFolder": "/work",
   // Install Python and pipenv using pyenv
   // "postCreateCommand": "pip install pipenv && pyenv install 3.11.4 && pyenv global 3.11.4",
-  "postCreateCommand": "pip --disable-pip-version-check --no-cache-dir install -r requirements.txt && curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash",
+  "postCreateCommand": "pip --disable-pip-version-check --no-cache-dir install -r requirements.txt -r requirements-dev.txt && curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash",
   "runArgs": [
     "--env-file",
     ".devcontainer/devcontainer.env"
@@ -26,35 +26,19 @@
     "vscode": {
       "extensions": [
         "ms-python.python",
-        "ms-python.flake8",
-        "ms-python.black-formatter",
+        "charliermarsh.ruff",
         "github.copilot",
         "github.copilot-chat"
       ],
       "settings": {
         "github.copilot.chat.enabled": true,
-        "python.pythonPath": "/root/.pyenv/shims/python",
-        "python.linting.pylintEnabled": false,
-        "python.linting.flake8Enabled": true,
-        "python.linting.enabled": true,
-        "python.formatting.provider": "black",
-        "python.formatting.blackPath": "/root/.pyenv/shims/black",
-        "python.formatting.blackArgs": [
-          "--line-length",
-          "79"
-        ],
-        "python.formatting.autopep8Path": "/root/.pyenv/shims/autopep8",
-        "python.formatting.autopep8Args": [
-          "--max-line-length",
-          "79",
-          "--aggressive",
-          "--aggressive"
-        ],
-        "python.formatting.yapfPath": "/root/.pyenv/shims/yapf",
-        "python.formatting.yapfArgs": [
-          "--style",
-          "{based_on_style: pep8, column_limit: 79}"
-        ]
+        "[python]": {
+          "editor.defaultFormatter": "charliermarsh.ruff",
+          "editor.formatOnSave": true,
+          "editor.codeActionsOnSave": {
+            "source.organizeImports.ruff": "explicit"
+          }
+        }
       }
     }
   }

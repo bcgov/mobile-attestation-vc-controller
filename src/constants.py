@@ -1,3 +1,4 @@
+import os
 from enum import Enum
 
 
@@ -9,7 +10,11 @@ class AttestationMethod(Enum):
 app_vendor = "Government of British Columbia"
 
 # Apple App Attestation
-app_id = "L796QSLV3E.ca.bc.gov.BCWallet"
+# Allowlist of accepted "<TeamID>.<bundleId>" App IDs. Defaults to the original
+# BCWallet bundle; override per-env to also accept BCSC variant bundles.
+allowed_apple_app_ids = [
+    x.strip() for x in os.getenv("ALLOWED_APPLE_APP_IDS", "L796QSLV3E.ca.bc.gov.BCWallet").split(",") if x.strip()
+]
 rp_id_hash_end = 32
 counter_start = 33
 counter_end = 37
@@ -19,7 +24,11 @@ cred_id_start = 55
 
 # Google Play Integrity
 integrity_scope = "https://www.googleapis.com/auth/playintegrity"
-bc_wallet_package_name = "ca.bc.gov.BCWallet"
+# Allowlist of accepted Android package names. Defaults to the original BCWallet
+# package; override per-env to also accept BCSC variant packages.
+allowed_google_package_names = [
+    x.strip() for x in os.getenv("ALLOWED_GOOGLE_PACKAGE_NAMES", "ca.bc.gov.BCWallet").split(",") if x.strip()
+]
 PLAY_RECOGNIZED = "PLAY_RECOGNIZED"
 
 # Redis

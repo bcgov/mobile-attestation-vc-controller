@@ -1,5 +1,5 @@
-import os
 import json
+import os
 import sys
 
 sys.path.insert(0, "./src")
@@ -35,4 +35,4 @@ send_presentation_response = send_presentation_request(payload)
 # print(json.dumps(send_presentation_response, indent=2))
 
 # If the response is successful, you should see a state of "request_sent"
-print(f'Send presentation status = {send_presentation_response["state"]}')
+print(f"Send presentation status = {send_presentation_response['state']}")

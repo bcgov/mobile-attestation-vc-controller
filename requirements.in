@@ -1,0 +1,14 @@
+# Runtime dependencies (top-level only).
+# Compile to the pinned, hashed requirements.txt with:
+#   pip-compile --generate-hashes requirements.in
+cbor
+cryptography
+flask
+google-api-python-client
+google-auth
+gunicorn
+pyasn1
+PyJWT
+python-dotenv
+redis>=5
+requests

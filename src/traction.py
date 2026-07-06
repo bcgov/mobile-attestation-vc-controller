@@ -1,11 +1,12 @@
-import requests
+import datetime
 import json
+import logging
 import os
 from urllib.parse import urljoin
-from dotenv import load_dotenv
-import logging
+
 import jwt
-import datetime
+import requests
+from dotenv import load_dotenv
 
 if os.getenv("FLASK_ENV") == "development":
     load_dotenv()
@@ -32,8 +33,10 @@ def is_token_expired(token):
         else:
             return True
     except Exception as e:
-        # Handle potential exceptions
-        print(f"An error occurred: {e}")
+        # Can't read the token's exp claim; treat it as expired so the caller
+        # refreshes rather than reusing a token we can't validate.
+        logger.error(f"Unable to decode bearer token, treating as expired: {e}")
+        return True
 
 
 def fetch_bearer_token():
@@ -66,6 +69,7 @@ def fetch_bearer_token():
     else:
         logger.error(f"Error fetching token: {response.status_code}")
         logger.error(f"Text content for error: {response.text}")
+        return None
 
 
 def get_connection(conn_id):
@@ -98,7 +102,7 @@ def get_connection(conn_id):
 def send_drpc_response(conn_id, thread_id, response):
     endpoint = f"/drpc/{conn_id}/response"
     message = {"response": response, "thread_id": thread_id}
-    print(f"Sending response to {conn_id}, message = {message}")
+    logger.debug(f"Sending response to {conn_id}, message = {message}")
 
     send_generic_message(conn_id, endpoint, message)
 
@@ -137,7 +141,7 @@ def offer_attestation_credential(offer):
     logger.info("issue_attestation_credential")
 
     base_url = os.environ.get("TRACTION_BASE_URL")
-    endpoint = "/issue-credential/send-offer"
+    endpoint = "/issue-credential-2.0/send-offer"
     url = urljoin(base_url, endpoint)
 
     token = fetch_bearer_token()
@@ -152,7 +156,7 @@ def offer_attestation_credential(offer):
 
     response = requests.post(url, headers=headers, data=json.dumps(offer))
 
-    if response.status_code == 200:
+    if response.ok:
         logger.info("Offer sent successfully")
     else:
         logger.error(f"Error sending offer: {response.status_code}")
@@ -163,7 +167,7 @@ def get_schema(schema_id):
     logger.info("get_schema")
 
     base_url = os.environ.get("TRACTION_BASE_URL")
-    endpoint = "/schemas/created"
+    endpoint = "/anoncreds/schemas"
     url = urljoin(base_url, endpoint)
 
     token = fetch_bearer_token()
@@ -189,7 +193,7 @@ def get_cred_def(schema_id):
     logger.info("get_cred_def")
 
     base_url = os.environ.get("TRACTION_BASE_URL")
-    endpoint = "/credential-definitions/created"
+    endpoint = "/anoncreds/credential-definitions"
     url = urljoin(base_url, endpoint)
 
     token = fetch_bearer_token()
@@ -215,7 +219,7 @@ def create_schema(schema_name, schema_version, attributes):
     logger.info("create_schema")
 
     base_url = os.environ.get("TRACTION_BASE_URL")
-    endpoint = "/schemas"
+    endpoint = "/anoncreds/schema"
     url = urljoin(base_url, endpoint)
 
     token = fetch_bearer_token()
@@ -227,14 +231,18 @@ def create_schema(schema_name, schema_version, attributes):
     }
 
     schema = {
-        "schema_name": schema_name,
-        "schema_version": schema_version,
-        "attributes": attributes,
+        "schema": {
+            "issuerId": os.environ.get("TRACTION_LEGACY_DID"),
+            "name": schema_name,
+            "version": schema_version,
+            "attrNames": attributes,
+        },
+        "options": {},
     }
 
     response = requests.post(url, headers=headers, data=json.dumps(schema))
 
-    if response.status_code == 200:
+    if response.ok:
         logger.info("Schema created successfully")
     else:
         logger.error(f"Error creating schema: {response.status_code}")
@@ -247,7 +255,7 @@ def create_cred_def(schema_id, tag, revocation_registry_size=0):
     logger.info("create_cred_def")
 
     base_url = os.environ.get("TRACTION_BASE_URL")
-    endpoint = "/credential-definitions"
+    endpoint = "/anoncreds/credential-definition"
     url = urljoin(base_url, endpoint)
 
     token = fetch_bearer_token()
@@ -258,19 +266,22 @@ def create_cred_def(schema_id, tag, revocation_registry_size=0):
         "Authorization": f"Bearer {token}",
     }
 
+    options = {"support_revocation": revocation_registry_size > 0}
+    if revocation_registry_size > 0:
+        options["revocation_registry_size"] = revocation_registry_size
+
     payload = {
-        "schema_id": schema_id,
-        "tag": tag,
-        "support_revocation": revocation_registry_size > 0,
+        "credential_definition": {
+            "issuerId": os.environ.get("TRACTION_LEGACY_DID"),
+            "schemaId": schema_id,
+            "tag": tag,
+        },
+        "options": options,
     }
 
-    if revocation_registry_size > 0:
-        payload["revocation_registry_size"] = revocation_registry_size
-
-    # print(payload)
     response = requests.post(url, headers=headers, data=json.dumps(payload))
 
-    if response.status_code == 200:
+    if response.ok:
         logger.info("Request sent successfully")
         return response.json()
     else:

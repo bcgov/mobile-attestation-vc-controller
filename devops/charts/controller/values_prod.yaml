@@ -36,6 +36,12 @@ env:
   # This is needed for Google Play verificaiton to accept
   # non-production playstore builds.
   ALLOW_TEST_BUILDS: "false"
+  # Comma-separated allowlists of bundles accepted for attestation.
+  # Apple Team ID L796QSLV3E and the single-app bundle/package IDs are verified
+  # against the wallet's variants/bcsc-prod/variant.env (single-app builds are
+  # signed by the same BC Gov Apple team as BCWallet).
+  ALLOWED_APPLE_APP_IDS: "L796QSLV3E.ca.bc.gov.BCWallet,L796QSLV3E.ca.bc.gov.id.servicescard"
+  ALLOWED_GOOGLE_PACKAGE_NAMES: "ca.bc.gov.BCWallet,ca.bc.gov.id.servicescard"
 
 resources:
   requests:
