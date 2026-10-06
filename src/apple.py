@@ -128,7 +128,7 @@ def extract_attestation_object_extension(attestation_object, oid="1.2.840.113635
 
     # Get the value of the extension
     cred_cert_extension_value = cred_cert_extension.value.value
-    
+
     # decoder.decode is a callable Decoder instance, not a type (pyasn1 0.6.x).
     decoded_data, _ = decoder.decode(cred_cert_extension_value, asn1Spec=univ.Sequence())
 
