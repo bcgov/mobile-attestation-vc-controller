@@ -1,5 +1,5 @@
-ARG python_version=3.9.18
-FROM python:${python_version}-slim-bullseye AS build
+ARG python_version=3.12
+FROM python:${python_version}-slim-bookworm AS build
 
 COPY requirements.txt /tmp/requirements.txt
 
