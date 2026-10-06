@@ -374,4 +374,4 @@ def drpc_response():
 
 
 if __name__ == "__main__":
-    server.run(debug=True, port=5501, host="0.0.0.0")
+    server.run(debug=True, port=5501, host=os.getenv("FLASK_RUN_HOST", "127.0.0.1"))

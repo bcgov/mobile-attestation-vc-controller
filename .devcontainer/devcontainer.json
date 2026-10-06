@@ -20,7 +20,8 @@
     ".devcontainer/devcontainer.env"
   ],
   "containerEnv": {
-    "FLASK_ENV": "development"
+    "FLASK_ENV": "development",
+    "FLASK_RUN_HOST": "0.0.0.0"
   },
   "customizations": {
     "vscode": {

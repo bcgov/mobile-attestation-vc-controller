@@ -9,9 +9,14 @@ RUN apt-get update && \
     curl && \
     rm -rf /var/lib/apt/lists/*
 
+# --require-hashes pins every resolved version; --only-binary avoids running setup
+# scripts. cbor 1.0.0 publishes no wheels, so it is the one explicit exception.
 RUN pip --disable-pip-version-check \
     --no-cache-dir install \
-    -r /tmp/requirements.txt && \ 
+    --require-hashes \
+    --only-binary :all: \
+    --no-binary cbor \
+    -r /tmp/requirements.txt && \
     rm -rf /tmp/requirements.txt
 
 FROM build
