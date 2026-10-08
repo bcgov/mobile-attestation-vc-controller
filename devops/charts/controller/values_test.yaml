@@ -19,7 +19,7 @@ image:
   # registry: ghcr.io
   repository: bcgov/mobile-attestation-vc-controller/controller
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "68a3892"
+  tag: "f4fc4fc"
 
 netpol:
   ingress:
@@ -27,6 +27,11 @@ netpol:
         - namespaceSelector:
             matchLabels:
               kubernetes.io/metadata.name: bc0192-test
+
+redis:
+  # Release name of the Redis chart in this namespace, which its pods carry as
+  # app.kubernetes.io/instance. The redis netpol selects pods by it.
+  instance: shared
 
 env:
   TRACTION_BASE_URL: "https://traction-tenant-proxy-test.apps.silver.devops.gov.bc.ca"
