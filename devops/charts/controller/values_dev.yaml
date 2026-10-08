@@ -16,7 +16,7 @@ image:
   # registry: ghcr.io
   repository: bcgov/mobile-attestation-vc-controller/controller
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "68a3892"
+  tag: "f4fc4fc"
 
 netpol:
   ingress:
