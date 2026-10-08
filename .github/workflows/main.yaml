@@ -11,6 +11,7 @@ on:
       - "fixtures/**"
       - "requirements*.txt"
       - "pyproject.toml"
+      - "Dockerfile"
 
 # defaults:
 #   run:

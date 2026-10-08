@@ -30,4 +30,5 @@ WORKDIR /opt/controller
 COPY src /opt/controller/
 COPY fixtures /opt/fixtures/
 
-ENTRYPOINT ["gunicorn", "-b", "0.0.0.0:5000", "controller:server"]
+# The control socket defaults to $HOME/.gunicorn, which OpenShift's arbitrary UID can't write.
+ENTRYPOINT ["gunicorn", "-b", "0.0.0.0:5000", "--no-control-socket", "controller:server"]
