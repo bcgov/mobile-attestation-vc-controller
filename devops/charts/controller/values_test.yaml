@@ -28,6 +28,11 @@ netpol:
             matchLabels:
               kubernetes.io/metadata.name: bc0192-test
 
+redis:
+  # Release name of the Redis chart in this namespace, which its pods carry as
+  # app.kubernetes.io/instance. The redis netpol selects pods by it.
+  instance: shared
+
 env:
   TRACTION_BASE_URL: "https://traction-tenant-proxy-test.apps.silver.devops.gov.bc.ca"
   APPLE_ATTESTATION_ROOT_CA_URL: "https://www.apple.com/certificateauthority/Apple_App_Attestation_Root_CA.pem"
