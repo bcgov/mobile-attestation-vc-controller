@@ -36,6 +36,10 @@ env:
   # This is needed for Google Play verificaiton to accept
   # non-production playstore builds.
   ALLOW_TEST_BUILDS: "true"
+  ALLOWED_APPLE_APP_IDS: "L796QSLV3E.ca.bc.gov.BCWallet,L796QSLV3E.ca.bc.gov.iddev.servicescard,L796QSLV3E.ca.bc.gov.idtest.servicescard,L796QSLV3E.ca.bc.gov.idqa.servicescard,L796QSLV3E.ca.bc.gov.id.servicescard"
+  ALLOWED_GOOGLE_PACKAGE_NAMES: "ca.bc.gov.BCWallet,ca.bc.gov.id.servicescard.dev,ca.bc.gov.id.servicescard.test,ca.bc.gov.id.servicescard.qa,ca.bc.gov.id.servicescard"
+  DEFAULT_CREDENTIAL_PROTOCOL: "v1"
+  ATTESTATION_CRED_DEF_IDS: "RycQpZ9b4NaXuT5ZGjXkUE:3:CL:120:bcwallet_test_v2"
 
 resources:
   requests:

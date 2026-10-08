@@ -17,6 +17,7 @@ While this controller can be run as a controller for any ACA-py instance, it was
 
 - VSCode
 - [Docker](https://docs.docker.com/get-docker/)
+- Python 3.12 (see `.python-version`)
 - Traction >= 0.3.2
 - Suitable tool for exposing localhost to the internet:
   1. [Cloudflared](https://github.com/cloudflare/cloudflared)
@@ -29,51 +30,146 @@ When run, this program will act as a "controller" to an ACA-py agent. It uses Fl
 
 ## Running
 
-### Local Development
+### Running Locally
 
-Follow these steps to get the controller running locally:
+The controller needs three things: a Redis cluster for nonces, a Traction tenant to
+issue through, and a public URL Traction can post webhooks to. A
+[Traction Sandbox](https://traction-sandbox-tenant-ui.apps.silver.devops.gov.bc.ca)
+tenant is the easiest way to get the second.
 
-**Step 1:** Create a `.env` file in the root of your project by copying `env.sample` to `.env`, then fill in your own values.
+**Step 1 — Redis.** The app's client is a `RedisCluster`, so a plain Redis won't do:
 
-> **Note:** For Android Attestation, you'll also need a Google OAuth JSON key file in `/src` configured for your app.
+```bash
+docker compose -f docker-compose.local.yml up -d
+```
 
-**Step 2:** Create a schema and credential definition ID in your Traction instance, then add it to `fixtures/offer.json` following the existing format.
+That starts one cluster-enabled node owning all 16384 slots, reachable at
+`127.0.0.1:6379`. Check it came up with
+`docker compose -f docker-compose.local.yml exec redis redis-cli cluster info` —
+you want `cluster_state:ok`.
 
-**Step 3:** Start the dev container. This repo includes a `.devcontainer` configuration to help you get up and running quickly. Open the project in VS Code and use the "Reopen in Container" command.
+**Step 2 — `.env`.** Copy `src/.env.sample` to `src/.env` and fill it in. From your
+Sandbox tenant's UI, the tenant ID and API key are under **Settings → Tenant Profile**,
+and the public DID is on the same page.
 
-**Step 4:** Once the container is running, initialize the Redis cluster. You can access the `redis-1` container via Docker Desktop and run:
+```bash
+TRACTION_BASE_URL="https://traction-sandbox-tenant-proxy.apps.silver.devops.gov.bc.ca"
+TRACTION_TENANT_ID="<your tenant id>"
+TRACTION_TENANT_API_KEY="<your api key>"
+TRACTION_LEGACY_DID="<your tenant's public DID>"
+REDIS_URI="redis://127.0.0.1:6379/0"
+MESSAGE_TEMPLATES_PATH="fixtures/"
+APPLE_ATTESTATION_ROOT_CA_URL="https://www.apple.com/certificateauthority/Apple_App_Attestation_Root_CA.pem"
+GOOGLE_AUTH_JSON_PATH="google_oauth_key.json"
+ALLOW_TEST_BUILDS="true"
+```
+
+**Step 3 — schema and cred def.** Your tenant has neither, and the controller refuses
+to issue (error 32604) unless a cred def whose issuer DID matches `TRACTION_LEGACY_DID`
+is configured. Create them, then point the controller at the result:
+
+```bash
+python scripts/schema.py
+python scripts/cred_def.py      # prints the new cred def ID
+```
+
+Add the printed ID to your `.env`:
+
+```bash
+ATTESTATION_CRED_DEF_IDS="<the cred def ID just created>"
+```
+
+**Step 4 — run it.**
+
+```bash
+source .venv/bin/activate
+python src/controller.py         # serves on 5501
+```
+
+`curl -i localhost:5501/topic/ping/` should return 204.
+
+**Step 5 — expose it.** Traction pushes webhooks, so it needs to reach you:
+
+```bash
+npx ngrok http 5501
+```
+
+Put the public URL in Traction under **Settings → Tenant Profile → WebHook URL**.
+Note the port: the app listens on 5501, though gunicorn serves 5000 in the container.
+
+Attestation itself can't be exercised from a simulator — App Attest and Play Integrity
+both need real hardware, and Play Integrity additionally needs the app's package to
+resolve a Google Cloud project. Point a device build at your tunnel instead.
+
+#### Alternative: Devcontainer
+
+`.devcontainer/` has its own three-node Redis cluster and a Python 3.12 workspace. Open
+the folder in VSCode and choose **Reopen in Container**. Redis is reached by container
+hostname there (`REDIS_URI=redis://redis-1:6379/0`, already set), and the cluster needs
+creating once per rebuild:
 
 ```bash
 redis-cli --cluster create redis-1:6379 redis-2:6379 redis-3:6379 --cluster-replicas 0
 ```
 
-**Step 5:** Start the controller:
+Everything else is the same. Use this if you want the three-node topology; the host
+route above is faster to iterate on.
+
+### Working on the Code
+
+The project targets the Python version in `.python-version`. If you use [mise](https://mise.jdx.dev), `mise install` picks it up. Check with `python3 --version`
 
 ```bash
-python src/controller.py
+python3 -m venv .venv
 ```
 
-The output should look something like this:
+Then activate it in each new shell
 
 ```bash
-vscode ➜ /work (main) $ python src/controller.py
- * Serving Flask app 'controller'
- * Debug mode: on
-WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
- * Running on http://127.0.0.1:5000
-Press CTRL+C to quit
- * Restarting with stat
- * Debugger is active!
- * Debugger PIN: 107-923-082
+source .venv/bin/activate
+pip install -r requirements.txt -r requirements-dev.txt
 ```
 
-**Step 6:** Expose the local server to the internet. Flask runs on port `5000`, and you'll need to make it publicly accessible. For example, using ngrok:
+To leave it:
 
 ```bash
-npx ngrok http 5000
+deactivate
 ```
 
-**Step 7:** Configure Traction to use your public URL. Copy the public endpoint from ngrok (or your chosen tunneling tool) and add it to Traction by going to **Settings → Tenant Profile** and entering the URL in the **WebHook URL** field.
+Day to day:
+
+```bash
+ruff check src scripts tests            # lint
+ruff format src scripts tests           # apply formatting (--check to only report)
+pytest                                  # unit tests
+```
+
+CI runs exactly these three and will not build the image unless all pass, so running
+them before pushing saves a round trip.
+
+#### Adding or Changing a Dependency
+
+```bash
+pip-compile --generate-hashes requirements.in
+pip-compile --generate-hashes --allow-unsafe requirements-dev.in
+pip install -r requirements.txt -r requirements-dev.txt
+```
+
+CI installs with `--require-hashes`, so a package added to an `.in` file without
+recompiling fails the build rather than being silently ignored.
+
+### Configuration
+
+Beyond the values in `.env.sample`, two settings govern which apps this deployment
+serves. Both are set per environment in `devops/charts/controller/values_*.yaml`.
+
+| Variable                       | Purpose                                                                                                         |
+| ------------------------------ | --------------------------------------------------------------------------------------------------------------- |
+| `ALLOWED_APPLE_APP_IDS`        | Comma-separated `<AppleTeamID>.<bundle id>` values accepted for App Attest.                                     |
+| `ALLOWED_GOOGLE_PACKAGE_NAMES` | Comma-separated Android package names accepted for Play Integrity.                                              |
+| `DEFAULT_CREDENTIAL_PROTOCOL`  | `v1` (issue-credential/1.0) or `v2` (issue-credential/2.0 + anoncreds), used when a client doesn't request one. |
+| `ATTESTATION_CRED_DEF_IDS`     | Comma-separated cred defs this deployment may issue; the one whose issuer DID matches `TRACTION_LEGACY_DID` is used. |
+| `ALLOW_TEST_BUILDS`            | When `true`, accepts Play Integrity verdicts other than `PLAY_RECOGNIZED`, so non-Play builds can attest.       |
 
 ### OpenShift Cluster
 

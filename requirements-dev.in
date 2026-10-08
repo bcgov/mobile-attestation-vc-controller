@@ -1,0 +1,8 @@
+# Development-only dependencies (linting, lockfile tooling).
+# Constrained against the runtime lockfile so shared deps stay aligned.
+# Compile with:
+#   pip-compile --generate-hashes requirements-dev.in
+-c requirements.txt
+pip-tools
+pytest
+ruff

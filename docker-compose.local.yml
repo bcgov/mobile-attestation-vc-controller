@@ -1,0 +1,37 @@
+# Redis for running the controller on the host. The devcontainer has its own
+# three-node cluster in .devcontainer/docker-compose.yml; that one is only reachable
+# by container hostname, so it can't serve a process running on the host.
+#
+# This is a single cluster-enabled node owning every slot. The app's client is a
+# RedisCluster, and a multi-node cluster can't announce host-reachable addresses
+# without breaking node-to-node gossip on Docker Desktop, so one node it is.
+services:
+  redis:
+    image: redis:7.2.3-alpine
+    command: >
+      redis-server
+      --appendonly yes
+      --cluster-enabled yes
+      --cluster-config-file nodes.conf
+      --cluster-node-timeout 5000
+      --port 6379
+      --cluster-announce-ip 127.0.0.1
+      --cluster-announce-port 6379
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      timeout: 2s
+      retries: 15
+
+  # Assigning all 16384 slots is what turns the node into a usable cluster;
+  # `redis-cli --cluster create` refuses anything short of three masters.
+  redis-init:
+    image: redis:7.2.3-alpine
+    depends_on:
+      redis:
+        condition: service_healthy
+    command: >
+      sh -c "redis-cli -h redis -p 6379 cluster addslotsrange 0 16383 || true"
+    restart: "no"

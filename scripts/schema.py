@@ -1,5 +1,9 @@
-from traction import get_schema, create_schema
 import os
+import sys
+
+sys.path.insert(0, "./src")
+
+from traction import create_schema, get_schema
 
 schema_id = "%s:2:app_attestation:1.0" % os.environ.get("TRACTION_LEGACY_DID")
 

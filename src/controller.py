@@ -1,26 +1,29 @@
 import json
-import secrets
 import logging
-import random
-from flask import Flask, request, make_response
-from traction import (
-    send_drpc_response,
-    send_drpc_request,
-    offer_attestation_credential,
-)
-from apple import verify_attestation_statement
-from goog import verify_integrity_token
 import os
-from dotenv import load_dotenv
-from redis_config import redis_instance
-from constants import (
-    auto_expire_nonce,
-    app_id,
-    app_vendor,
-    AttestationMethod,
-    attestation_cred_def_ids,
-)
+import random
+import secrets
 from datetime import datetime
+
+from dotenv import load_dotenv
+from flask import Flask, make_response, request
+
+from apple import verify_attestation_statement
+from constants import (
+    AttestationMethod,
+    app_vendor,
+    attestation_cred_def_ids,
+    auto_expire_nonce,
+    default_credential_protocol,
+    supported_credential_protocols,
+)
+from goog import verify_integrity_token
+from redis_config import redis_instance
+from traction import (
+    offer_attestation_credential,
+    send_drpc_request,
+    send_drpc_response,
+)
 
 if os.getenv("FLASK_ENV") == "development":
     load_dotenv()
@@ -37,6 +40,7 @@ error_codes = {
     32605: "unsupported platform",
     32606: "invalid challenge",
     32607: "unable to cache nonce",
+    32608: "unsupported credential protocol",
 }
 
 
@@ -82,7 +86,7 @@ def handle_drpc_request_nonce_v1(drpc_request, connection_id):
 
     # Cache nonce with connection id as key, allow it to expire
     # after `auto_expire_nonce` seconds
-    redis_instance.setex(connection_id, auto_expire_nonce, nonce)
+    redis_instance.set(connection_id, nonce, ex=auto_expire_nonce)
 
     # The response to a request for a nonce is a request for
     # attestation. This is fixed in v2 of the protocol.
@@ -100,7 +104,7 @@ def handle_drpc_request_nonce_v2(drpc_request, connection_id):
 
         # Cache nonce with connection id as key, allow it to expire
         # after `auto_expire_nonce` seconds
-        redis_instance.setex(connection_id, auto_expire_nonce, nonce)
+        redis_instance.set(connection_id, nonce, ex=auto_expire_nonce)
     except Exception as e:
         logger.info(f"Unable to cache nonce for connection id: {connection_id}, {e}")
         return report_failure(drpc_request_id, 32607)
@@ -119,26 +123,30 @@ def handle_drpc_request_attestation_v1(drpc_response, connection_id):
 
     result = drpc_response.get("response").get("result")
     if not result:
-        logger.info("Unable to get result from drpc response")
+        logger.warning("Unable to get result from drpc response, aborting")
+        return
 
     attestation_object = result.get("attestation_object")
     platform = result.get("platform")
     app_version = result.get("app_version")
     os_version = result.get("os_version")
     key_id = result.get("key_id", None)
+    credential_protocol = result.get("credential_protocol", default_credential_protocol)
+    app_id_hint = result.get("app_id_hint")
 
     # fetch nonce from cache using connection id as key
     nonce = redis_instance.get(connection_id)
     if not nonce:
-        logger.info("No cached nonce")
+        logger.warning(f"No cached nonce for connection {connection_id}, aborting")
+        return
 
     if None in [attestation_object, nonce, platform, app_version, os_version]:
-        logger.info("Attestation paremeters missing")
-        # TODO(jl): Fail gracefully
+        logger.warning("Attestation parameters missing, aborting")
+        return
 
     if platform == "apple" and key_id is None:
-        logger.info("Key id missing for apple attestation")
-        # TODO(jl): Fail gracefully
+        logger.warning("Key id missing for apple attestation, aborting")
+        return
 
     try:
         return validate_and_offer(
@@ -148,6 +156,8 @@ def handle_drpc_request_attestation_v1(drpc_response, connection_id):
             app_version,
             os_version,
             connection_id,
+            credential_protocol,
+            app_id_hint,
         )
     except Exception as e:
         logger.info(f"Error processing attestation {str(e)}")
@@ -167,6 +177,8 @@ def handle_drpc_request_attestation_v2(drpc_request, connection_id):
     app_version = attestation_params.get("app_version")
     os_version = attestation_params.get("os_version")
     key_id = attestation_params.get("key_id", None)
+    credential_protocol = attestation_params.get("credential_protocol", default_credential_protocol)
+    app_id_hint = attestation_params.get("app_id_hint")
     drpc_request_id = drpc_request.get("id", random.randint(0, 1000000))
 
     # fetch nonce from cache using connection id as key
@@ -191,6 +203,8 @@ def handle_drpc_request_attestation_v2(drpc_request, connection_id):
             app_version,
             os_version,
             connection_id,
+            credential_protocol,
+            app_id_hint,
         )
 
         if rv is not None:
@@ -210,17 +224,40 @@ def handle_drpc_request_attestation_v2(drpc_request, connection_id):
 
 
 # TODO(jl): Break into seporate validate and offer functions.
+def build_offer(offer, cred_def_id, protocol):
+    """Shapes the offer for the issue-credential protocol being used."""
+    if protocol == "v2":
+        offer["credential_preview"]["@type"] = "issue-credential/2.0/credential-preview"
+        offer["filter"] = {"anoncreds": {"cred_def_id": cred_def_id}}
+        offer.pop("cred_def_id", None)
+    else:
+        offer["cred_def_id"] = cred_def_id
+
+    return offer
+
+
 def validate_and_offer(
-    attestation_data, nonce, platform, app_version, os_version, connection_id
+    attestation_data,
+    nonce,
+    platform,
+    app_version,
+    os_version,
+    connection_id,
+    credential_protocol=None,
+    app_id_hint=None,
 ):
     attestation_object, key_id = attestation_data
+    protocol = credential_protocol or default_credential_protocol
+    if protocol not in supported_credential_protocols:
+        logger.info(f"Unsupported credential protocol {protocol}")
+        return 32608
+
     os_version_parts = os_version.split(" ")
     method = (
         AttestationMethod.AppleAppAttestation.value
         if platform == "apple"
         else AttestationMethod.GooglePlayIntegrity.value
     )
-    is_valid_challenge = False
 
     message_templates_path = os.getenv("MESSAGE_TEMPLATES_PATH")
     with open(os.path.join(message_templates_path, "offer.json"), "r") as f:
@@ -238,36 +275,38 @@ def validate_and_offer(
         logger.info("No matching cred def id")
         return 32604
 
-    offer["cred_def_id"] = cred_def_id
+    offer = build_offer(offer, cred_def_id, protocol)
     offer["connection_id"] = connection_id
-    offer["credential_preview"]["attributes"] = [
-        {"name": "operating_system", "value": os_version_parts[0]},
-        {"name": "operating_system_version", "value": os_version_parts[1]},
-        {"name": "validation_method", "value": method},
-        {"name": "app_id", "value": ".".join(app_id.split(".")[1:])},
-        {"name": "app_vendor", "value": app_vendor},
-        {"name": "issue_date_dateint", "value": datetime.now().strftime("%Y%m%d")},
-        {"name": "app_version", "value": app_version},
-    ]
 
+    # The verifiers return the bundle that actually attested, so the issued
+    # credential names that app rather than a hardcoded one.
     if platform == "apple":
         logger.info("testing apple challenge")
-        is_valid_challenge = verify_attestation_statement(
-            attestation_object, key_id, nonce
-        )
+        matched_app_id = verify_attestation_statement(attestation_object, key_id, nonce)
+        # Strip the Apple Team ID prefix to leave the bundle id.
+        attested_app_id = ".".join(matched_app_id.split(".")[1:]) if matched_app_id else None
     elif platform == "google":
         logger.info("testing google challenge")
-        is_valid_challenge = verify_integrity_token(attestation_object, nonce)
+        attested_app_id = verify_integrity_token(attestation_object, nonce, app_id_hint)
     else:
         logger.info("unsupported platform")
         return 32605
 
-    if is_valid_challenge:
-        logger.info("valid challenge")
-        offer_attestation_credential(offer)
-    else:
+    if not attested_app_id:
         logger.info("invalid challenge")
         return 32606
+
+    logger.info(f"valid challenge for {attested_app_id}")
+    offer["credential_preview"]["attributes"] = [
+        {"name": "operating_system", "value": os_version_parts[0]},
+        {"name": "operating_system_version", "value": os_version_parts[1]},
+        {"name": "validation_method", "value": method},
+        {"name": "app_id", "value": attested_app_id},
+        {"name": "app_vendor", "value": app_vendor},
+        {"name": "issue_date_dateint", "value": datetime.now().strftime("%Y%m%d")},
+        {"name": "app_version", "value": app_version},
+    ]
+    offer_attestation_credential(offer, protocol)
 
     return None
 
@@ -290,13 +329,14 @@ def ping():
 
 
 @server.route("/topic/issue_credential/", methods=["POST"])
+@server.route("/topic/issue_credential_v2_0/", methods=["POST"])
 def issue_credential():
-    logger.info("Run POST /topic/issue_credential")
+    logger.info(f"Run POST {request.path}")
 
     connection_id = request.get_json().get("connection_id")
     state = request.get_json().get("state")
 
-    print(f"Credential for connection id {connection_id}, sate {state}"),
+    logger.info(f"Credential for connection id {connection_id}, state {state}")
 
     return make_response("", 204)
 
@@ -335,4 +375,4 @@ def drpc_response():
 
 
 if __name__ == "__main__":
-    server.run(debug=True, port=5501, host="0.0.0.0")
+    server.run(debug=True, port=5501, host=os.getenv("FLASK_RUN_HOST", "127.0.0.1"))
