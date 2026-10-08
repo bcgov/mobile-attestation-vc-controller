@@ -18,6 +18,8 @@ def offer_template():
     return copy.deepcopy(
         {
             "auto_issue": True,
+            # Stale value so the tests prove build_offer replaces or drops it.
+            "cred_def_id": "stale:3:CL:0:template",
             "credential_preview": {
                 "@type": "issue-credential/1.0/credential-preview",
                 "attributes": [],

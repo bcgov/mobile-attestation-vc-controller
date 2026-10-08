@@ -36,18 +36,10 @@ env:
   # This is needed for Google Play verificaiton to accept
   # non-production playstore builds.
   ALLOW_TEST_BUILDS: "true"
-  # Non-prod accepts every BC Wallet and BCSC bundle, so any variant can be pointed
-  # here for testing. IDs come from variants/bcsc-*/variant.env in the wallet repo;
-  # BC Gov signs every variant with Apple team L796QSLV3E.
   ALLOWED_APPLE_APP_IDS: "L796QSLV3E.ca.bc.gov.BCWallet,L796QSLV3E.ca.bc.gov.iddev.servicescard,L796QSLV3E.ca.bc.gov.idtest.servicescard,L796QSLV3E.ca.bc.gov.idqa.servicescard,L796QSLV3E.ca.bc.gov.id.servicescard"
   ALLOWED_GOOGLE_PACKAGE_NAMES: "ca.bc.gov.BCWallet,ca.bc.gov.id.servicescard.dev,ca.bc.gov.id.servicescard.test,ca.bc.gov.id.servicescard.qa,ca.bc.gov.id.servicescard"
-  # Every environment issues over issue-credential 1.0 by default; a client asks
-  # for v2 by sending credential_protocol in its attestation request.
   DEFAULT_CREDENTIAL_PROTOCOL: "v1"
-  # Attestation cred defs this deployment may issue. The one whose issuer DID
-  # matches the tenant's traction_legacy_did is the one used, so all environments
-  # can carry the same list; narrow it per environment if you prefer.
-  ATTESTATION_CRED_DEF_IDS: "NXp6XcGeCR2MviWuY51Dva:3:CL:33557:bcwallet_dev_v2,RycQpZ9b4NaXuT5ZGjXkUE:3:CL:120:bcwallet_test_v2,XqaRXJt4sXE6TRpfGpVbGw:3:CL:655:bcwallet"
+  ATTESTATION_CRED_DEF_IDS: "RycQpZ9b4NaXuT5ZGjXkUE:3:CL:120:bcwallet_test_v2"
 
 resources:
   requests:

@@ -229,6 +229,7 @@ def build_offer(offer, cred_def_id, protocol):
     if protocol == "v2":
         offer["credential_preview"]["@type"] = "issue-credential/2.0/credential-preview"
         offer["filter"] = {"anoncreds": {"cred_def_id": cred_def_id}}
+        offer.pop("cred_def_id", None)
     else:
         offer["cred_def_id"] = cred_def_id
 
