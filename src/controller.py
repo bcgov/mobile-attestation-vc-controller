@@ -319,12 +319,15 @@ def report_failure(drpc_request_id, code):
     }
 
 
+_ping_logged = False
+
+
 @server.route("/topic/ping/", methods=["POST", "GET"])
 def ping():
-    if request.method == "POST":
-        logger.info("Run POST /ping/")
-    elif request.method == "GET":
-        logger.info("Run GET /ping/")
+    global _ping_logged
+    if not _ping_logged:
+        logger.info(f"Run {request.method} /ping/ (further pings are not logged)")
+        _ping_logged = True
     return make_response("", 204)
 
 

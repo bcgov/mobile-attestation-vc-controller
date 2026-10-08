@@ -62,3 +62,14 @@ def test_each_supported_protocol_maps_to_an_endpoint():
     assert set(controller.supported_credential_protocols) == set(
         controller.offer_attestation_credential.__globals__["issue_credential_endpoints"]
     )
+
+
+def test_ping_logs_only_the_first_request(monkeypatch, caplog):
+    monkeypatch.setattr(controller, "_ping_logged", False)
+    client = controller.server.test_client()
+
+    with caplog.at_level("INFO", logger="controller"):
+        for _ in range(3):
+            assert client.get("/topic/ping/").status_code == 204
+
+    assert len([r for r in caplog.records if "/ping/" in r.getMessage()]) == 1
