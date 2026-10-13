@@ -10,5 +10,5 @@ gunicorn
 pyasn1
 PyJWT
 python-dotenv
-redis>=5
+redis>=8.1.0
 requests
